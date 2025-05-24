@@ -47,3 +47,10 @@ export function saveImageState(data: any) {
   validateImageState(data);
   localStorage.setItem(IMAGE_LS_KEY, JSON.stringify(data));
 }
+
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    const image = getImage();
+    setImage(image);
+  });
+}
