@@ -28,34 +28,44 @@ export default function (
           const selectEl = document.querySelector(
             "#theme-settings select",
           ) as HTMLSelectElement;
-          selectEl.value = "custom";
+          selectEl.innerHTML = ""; // Clear existing options
+          const customOption = DomRender.option({
+            text: "custom",
+            value: "custom",
+          });
+          selectEl.append(customOption);
 
           for (const key of Object.keys(THEMES)) {
             const optionEl = DomRender.option({
               text: key,
               value: key,
             });
-
             selectEl.append(optionEl);
-
-            selectEl.addEventListener("change", () => {
-              const selectedTheme =
-                selectEl.value === "custom"
-                  ? {
-                      theme: getTheme(),
-                      image: getImage(),
-                    }
-                  : THEMES[selectEl.value as keyof typeof THEMES];
-              refreshTheme(selectedTheme.theme);
-              refreshImage(selectedTheme.image);
-              themeSection.state = selectedTheme.theme;
-              imageSection.state = selectedTheme.image;
-              themeSection.rerender();
-              imageSection.rerender();
-            });
           }
+          selectEl.value = "nord"; // Set default to Nord
+
+          selectEl.addEventListener("change", () => {
+            const selectedTheme =
+              selectEl.value === "custom"
+                ? {
+                    theme: getTheme(),
+                    image: getImage(),
+                  }
+                : THEMES[selectEl.value as keyof typeof THEMES];
+            refreshTheme(selectedTheme.theme);
+            refreshImage(selectedTheme.image);
+            themeSection.state = selectedTheme.theme;
+            imageSection.state = selectedTheme.image;
+            themeSection.rerender();
+            imageSection.rerender();
+          });
         },
-        rerender: () => {},
+        rerender: () => {
+          const selectEl = document.querySelector(
+            "#theme-settings select",
+          ) as HTMLSelectElement;
+          selectEl.value = "nord"; // Ensure Nord is selected on rerender
+        },
       },
       new InputGroup({
         wrapperEl: document.querySelector(
@@ -83,5 +93,42 @@ export default function (
       refreshTheme(themeSection.state);
     },
   });
+
+  if (import.meta.hot) {
+    import.meta.hot.accept(() => {
+      const defaultThemeName = "nord"; // Default to Nord
+      const selectedTheme = THEMES[defaultThemeName] || {
+        theme: getTheme(),
+        image: getImage(),
+      };
+      refreshTheme(selectedTheme.theme);
+      refreshImage(selectedTheme.image);
+      themeSection.state = selectedTheme.theme;
+      imageSection.state = selectedTheme.image;
+      themeSection.rerender();
+      imageSection.rerender();
+
+      const selectEl = document.querySelector(
+        "#theme-settings select",
+      ) as HTMLSelectElement;
+      if (selectEl) {
+        selectEl.innerHTML = "";
+        const customOption = DomRender.option({
+          text: "custom",
+          value: "custom",
+        });
+        selectEl.append(customOption);
+        for (const key of Object.keys(THEMES)) {
+          const optionEl = DomRender.option({
+            text: key,
+            value: key,
+          });
+          selectEl.append(optionEl);
+        }
+        selectEl.value = defaultThemeName;
+      }
+    });
+  }
+
   return themeSection;
 }
