@@ -4,6 +4,7 @@ import initKeybindsSettings from "./KeybindsSettings";
 import initImageSettings from "./ImageSettings";
 import initJsonSettings from "./JsonSettings";
 import initSearchSettings from "./SearchSettings";
+import initThemeModeSettings from "./ThemeModeSettings";
 import { InitSettingsProps } from "../Modal";
 import "../styles/settings.css";
 import initLinkButtons from "./LinkButtons";
@@ -14,8 +15,9 @@ export default function init({
   theme,
   keybinds,
   imageState,
-  search,
+  search
 }: InitSettingsProps) {
+  const themeModeSection = initThemeModeSettings();
   const linkSection = initLinksSettings(links);
   const keybindSection = initKeybindsSettings(keybinds);
   const imageSection = initImageSettings(imageState);
@@ -28,13 +30,14 @@ export default function init({
   const linkButtonsSection = initLinkButtons();
 
   const sections = [
+    themeModeSection,
     themeSection,
     linkSection,
     keybindSection,
     imageSection,
     searchSection,
     jsonSection,
-    linkButtonsSection,
+    linkButtonsSection
   ];
   sections.forEach((section) => section.render());
 }
