@@ -1,3 +1,6 @@
+import { setTheme, saveTheme } from "../Theme";
+import { setImage, saveImageState } from "../Image";
+
 const everforest_dark = {
   theme: {
     "bg color": "#2d353b",
@@ -111,6 +114,19 @@ const dracula = {
     "position y": "50%",
   },
 };
+
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    const defaultThemeName = "nord"; // Change to desired default
+    const { theme, image } = exports.default[defaultThemeName];
+    setTheme(theme);
+    saveTheme(theme);
+    setImage(image);
+    saveImageState(image);
+    const select = document.querySelector('select[name="load theme"]');
+    if (select) select.value = defaultThemeName;
+  });
+}
 
 export default {
   everforest_dark,
