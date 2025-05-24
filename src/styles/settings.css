@@ -207,3 +207,78 @@ form[name="image"] .input-group {
   row-gap: 1.8em;
   overflow: visible;
 }
+
+
+#theme-mode-settings {
+  padding-right: 3em;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+#theme-mode-settings .settings-title {
+  color: rgb(var(--accent-1));
+  margin: 0 auto 1.5em auto;
+  font-family: "Roboto Mono", monospace;
+}
+
+#theme-mode-settings .input-group {
+  display: flex;
+  gap: 1.5em;
+  align-items: center;
+  margin-bottom: 1.8em;
+}
+
+#theme-mode-settings .input-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: rgb(var(--main-fg-color));
+  cursor: pointer;
+  font-family: "Roboto Mono", monospace;
+}
+
+#theme-mode-settings .input-group input[type="radio"] {
+  appearance: none;
+  width: 1.2em;
+  height: 1.2em;
+  border: 1px solid rgb(var(--main-accent));
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+#theme-mode-settings .input-group input[type="radio"]:checked {
+  background: rgb(var(--main-accent));
+  border-color: rgb(var(--main-fg-color));
+}
+
+#theme-mode-settings .input-group input[type="radio"]:hover {
+  background: rgba(var(--main-accent), 0.3);
+}
+
+#theme-mode-settings .msg {
+  color: rgb(var(--main-fg-color));
+  font-family: "Roboto Mono", monospace;
+  margin-bottom: 1em;
+}
+
+#theme-mode-settings.error .msg {
+  color: rgb(var(--accent-3));
+}
+
+#theme-mode-settings button[type="submit"],
+#theme-mode-settings button[aria-label="reset"] {
+  padding: 0.6em 1.2em;
+  background: rgb(var(--main-bg-color));
+  color: rgb(var(--main-fg-color));
+  border: 1px solid rgb(var(--main-accent));
+  cursor: pointer;
+  font-family: "Roboto Mono", monospace;
+  margin-right: 1em;
+}
+
+#theme-mode-settings button[type="submit"]:hover,
+#theme-mode-settings button[aria-label="reset"]:hover {
+  background: rgb(var(--main-accent));
+  color: rgb(var(--main-bg-color));
+}
