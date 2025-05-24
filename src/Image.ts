@@ -1,7 +1,9 @@
 import { z } from "zod";
 import THEMES, { defaultThemeName } from "./data/THEMES";
+import wallbash from "./wallbashTheme";
 
 export const IMAGE_LS_KEY = "image";
+export const THEME_MODE_LS_KEY = "themeMode";
 
 export interface ImageState {
   image: string | null;
@@ -23,11 +25,9 @@ export function getImage(): ImageState {
   const lsItem = localStorage.getItem(IMAGE_LS_KEY);
   if (lsItem) return JSON.parse(lsItem);
 
-  const imageState = THEMES[defaultThemeName]?.image || {
-    image: `url(${import.meta.env.BASE_URL}astero-20210517a.jpg)`,
-    "position x": "35%",
-    "position y": "50%"
-  };
+  const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
+  const imageState = mode === "themes" ? THEMES[defaultThemeName]?.image : wallbash.image;
+
   localStorage.setItem(IMAGE_LS_KEY, JSON.stringify(imageState));
   return imageState;
 }
