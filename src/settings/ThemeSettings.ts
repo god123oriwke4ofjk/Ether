@@ -1,5 +1,5 @@
 import { StringKeyObj } from "../../types/interfaces";
-import THEMES from "../data/THEMES";
+import THEMES, { defaultThemeName } from "../data/THEMES";
 import DomRender from "../DomRender";
 import { getImage, ImageState, refreshImage, saveImageState } from "../Image";
 import {
@@ -7,16 +7,16 @@ import {
   refreshTheme,
   saveTheme,
   Theme,
-  THEME_LS_KEY,
+  THEME_LS_KEY
 } from "../Theme";
 import InputGroup from "./InputGroup";
 import SettingsSection, {
-  SettingsSectionWithChildren,
+  SettingsSectionWithChildren
 } from "./SettingsSection";
 
 export default function (
   theme: Theme,
-  imageSection: SettingsSection<ImageState>,
+  imageSection: SettingsSection<ImageState>
 ) {
   const themeSection = new SettingsSectionWithChildren({
     title: THEME_LS_KEY,
@@ -26,30 +26,30 @@ export default function (
       {
         render: function () {
           const selectEl = document.querySelector(
-            "#theme-settings select",
+            "#theme-settings select"
           ) as HTMLSelectElement;
-          selectEl.innerHTML = ""; // Clear existing options
+          selectEl.innerHTML = "";
           const customOption = DomRender.option({
             text: "custom",
-            value: "custom",
+            value: "custom"
           });
           selectEl.append(customOption);
 
           for (const key of Object.keys(THEMES)) {
             const optionEl = DomRender.option({
               text: key,
-              value: key,
+              value: key
             });
             selectEl.append(optionEl);
           }
-          selectEl.value = "nord"; // Set default to Nord
+          selectEl.value = defaultThemeName; // Use defaultThemeName
 
           selectEl.addEventListener("change", () => {
             const selectedTheme =
               selectEl.value === "custom"
                 ? {
                     theme: getTheme(),
-                    image: getImage(),
+                    image: getImage()
                   }
                 : THEMES[selectEl.value as keyof typeof THEMES];
             refreshTheme(selectedTheme.theme);
@@ -62,18 +62,18 @@ export default function (
         },
         rerender: () => {
           const selectEl = document.querySelector(
-            "#theme-settings select",
+            "#theme-settings select"
           ) as HTMLSelectElement;
-          selectEl.value = "nord"; // Ensure Nord is selected on rerender
-        },
+          selectEl.value = defaultThemeName; // Use defaultThemeName
+        }
       },
       new InputGroup({
         wrapperEl: document.querySelector(
-          "#theme-settings .input-group",
+          "#theme-settings .input-group"
         ) as HTMLElement,
         updateState: (e: Event) => {
           const selectEl = document.querySelector(
-            "#theme-settings select",
+            "#theme-settings select"
           ) as HTMLSelectElement;
           selectEl.value = "custom";
 
@@ -84,22 +84,22 @@ export default function (
           else themeSection.state[key] = target.value;
         },
         getState: (): StringKeyObj => themeSection.state,
-        id: THEME_LS_KEY,
-      }),
+        id: THEME_LS_KEY
+      })
     ],
     onSave: () => {
       saveTheme(themeSection.state);
       saveImageState(imageSection.state);
       refreshTheme(themeSection.state);
-    },
+    }
   });
 
+  // HMR: Reapply theme, image, and update dropdown when this module changes
   if (import.meta.hot) {
     import.meta.hot.accept(() => {
-      const defaultThemeName = "nord"; // Default to Nord
       const selectedTheme = THEMES[defaultThemeName] || {
         theme: getTheme(),
-        image: getImage(),
+        image: getImage()
       };
       refreshTheme(selectedTheme.theme);
       refreshImage(selectedTheme.image);
@@ -109,19 +109,19 @@ export default function (
       imageSection.rerender();
 
       const selectEl = document.querySelector(
-        "#theme-settings select",
+        "#theme-settings select"
       ) as HTMLSelectElement;
       if (selectEl) {
         selectEl.innerHTML = "";
         const customOption = DomRender.option({
           text: "custom",
-          value: "custom",
+          value: "custom"
         });
         selectEl.append(customOption);
         for (const key of Object.keys(THEMES)) {
           const optionEl = DomRender.option({
             text: key,
-            value: key,
+            value: key
           });
           selectEl.append(optionEl);
         }
