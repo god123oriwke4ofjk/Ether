@@ -7,7 +7,8 @@ import {
   refreshTheme,
   saveTheme,
   Theme,
-  THEME_LS_KEY
+  THEME_LS_KEY,
+  THEME_MODE_LS_KEY
 } from "../Theme";
 import InputGroup from "./InputGroup";
 import SettingsSection, {
@@ -42,7 +43,9 @@ export default function (
             });
             selectEl.append(optionEl);
           }
-          selectEl.value = defaultThemeName; // Use defaultThemeName
+          const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
+          selectEl.value = mode === "themes" ? defaultThemeName : "custom";
+          selectEl.disabled = mode === "wallbash";
 
           selectEl.addEventListener("change", () => {
             const selectedTheme =
@@ -64,7 +67,9 @@ export default function (
           const selectEl = document.querySelector(
             "#theme-settings select"
           ) as HTMLSelectElement;
-          selectEl.value = defaultThemeName; // Use defaultThemeName
+          const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
+          selectEl.value = mode === "themes" ? defaultThemeName : "custom";
+          selectEl.disabled = mode === "wallbash";
         }
       },
       new InputGroup({
@@ -97,10 +102,8 @@ export default function (
   // HMR: Reapply theme, image, and update dropdown when this module changes
   if (import.meta.hot) {
     import.meta.hot.accept(() => {
-      const selectedTheme = THEMES[defaultThemeName] || {
-        theme: getTheme(),
-        image: getImage()
-      };
+      const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
+      const selectedTheme = mode === "themes" ? THEMES[defaultThemeName] : wallbash;
       refreshTheme(selectedTheme.theme);
       refreshImage(selectedTheme.image);
       themeSection.state = selectedTheme.theme;
@@ -125,7 +128,8 @@ export default function (
           });
           selectEl.append(optionEl);
         }
-        selectEl.value = defaultThemeName;
+        selectEl.value = mode === "themes" ? defaultThemeName : "custom";
+        selectEl.disabled = mode === "wallbash";
       }
     });
   }
