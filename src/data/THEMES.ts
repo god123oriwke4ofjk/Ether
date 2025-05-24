@@ -1,6 +1,8 @@
 import { setTheme, saveTheme } from "../Theme";
 import { setImage, saveImageState } from "../Image";
 
+export const defaultThemeName = "nord";
+
 const everforest_dark = {
   theme: {
     "bg color": "#2d353b",
@@ -115,10 +117,23 @@ const dracula = {
   },
 };
 
+const themes = {
+  everforest_dark,
+  catppuccin,
+  dracula,
+  gruvbox,
+  nord,
+  bw,
+  solarized
+};
+
+if (!themes[defaultThemeName]) {
+  console.error(`Invalid defaultThemeName: ${defaultThemeName}. Available themes: ${Object.keys(themes).join(", ")}`);
+}
+
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
-    const defaultThemeName = "nord"; // Change to desired default
-    const { theme, image } = exports.default[defaultThemeName];
+    const { theme, image } = themes[defaultThemeName] || themes.nord; // Fallback to nord if invalid
     setTheme(theme);
     saveTheme(theme);
     setImage(image);
@@ -128,11 +143,4 @@ if (import.meta.hot) {
   });
 }
 
-export default {
-  everforest_dark,
-  catppuccin,
-  dracula,
-  gruvbox,
-  nord,
-  bw,
-};
+export themes;
