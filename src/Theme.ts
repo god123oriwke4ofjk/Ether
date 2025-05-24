@@ -2,8 +2,10 @@ import { convertCssRgbToHex, hexToRgb } from "./utils/colors";
 import { z } from "zod";
 import { defaultThemeName } from "./data/THEMES";
 import THEMES from "./data/THEMES";
+import wallbash, { wallbashThemePath } from "./wallbashTheme";
 
 export const THEME_LS_KEY = "theme";
+export const THEME_MODE_LS_KEY = "themeMode";
 
 export type Theme = {
   "fg color": string;
@@ -41,17 +43,8 @@ export function getTheme(): Theme {
   const lsItem = localStorage.getItem(THEME_LS_KEY);
   if (lsItem) return JSON.parse(lsItem);
 
-  const defaultTheme = THEMES[defaultThemeName]?.theme || {
-    "bg color": "#2e3440",
-    "fg color": "#eceff4",
-    "main accent": "#5e81ac",
-    "accent 1": "#b48ead",
-    "accent 2": "#a3be8c",
-    "accent 3": "#d08770",
-    "accent 4": "#ebcb8b",
-    "accent 5": "#8fbcbb",
-    "panel opacity": 0.8
-  };
+  const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
+  const defaultTheme = mode === "themes" ? THEMES[defaultThemeName]?.theme : wallbash.theme;
 
   localStorage.setItem(THEME_LS_KEY, JSON.stringify(defaultTheme));
   return defaultTheme;
