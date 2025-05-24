@@ -1,5 +1,7 @@
 import { convertCssRgbToHex, hexToRgb } from "./utils/colors";
 import { z } from "zod";
+import { defaultThemeName } from "./data/THEMES";
+import THEMES from "./data/THEMES";
 
 export const THEME_LS_KEY = "theme";
 
@@ -17,7 +19,7 @@ export type Theme = {
 
 const hex = z.custom((val) => {
   return /^#([A-Fa-f0-9]{6})$/.test(val as string);
-}, "Encounted invalid hex code");
+}, "Encountered invalid hex code");
 const ThemeSchema = z
   .object({
     "fg color": hex,
@@ -31,31 +33,24 @@ const ThemeSchema = z
     "panel opacity": z
       .number()
       .min(0, "Panel opacity must be between 0 and 1.")
-      .max(1, "Panel opacity must be between 0 and 1."),
+      .max(1, "Panel opacity must be between 0 and 1.")
   })
-  .strict("Encounted unknown theme variable");
+  .strict("Encountered unknown theme variable");
 
 export function getTheme(): Theme {
   const lsItem = localStorage.getItem(THEME_LS_KEY);
   if (lsItem) return JSON.parse(lsItem);
 
-  const cssVariables = window.getComputedStyle(document.documentElement);
-  const defaultTheme = {
-    "bg color": convertCssRgbToHex(
-      cssVariables.getPropertyValue("--main-bg-color"),
-    ),
-    "fg color": convertCssRgbToHex(
-      cssVariables.getPropertyValue("--main-fg-color"),
-    ),
-    "main accent": convertCssRgbToHex(
-      cssVariables.getPropertyValue("--main-accent"),
-    ),
-    "accent 1": convertCssRgbToHex(cssVariables.getPropertyValue("--accent-1")),
-    "accent 2": convertCssRgbToHex(cssVariables.getPropertyValue("--accent-2")),
-    "accent 3": convertCssRgbToHex(cssVariables.getPropertyValue("--accent-3")),
-    "accent 4": convertCssRgbToHex(cssVariables.getPropertyValue("--accent-4")),
-    "accent 5": convertCssRgbToHex(cssVariables.getPropertyValue("--accent-5")),
-    "panel opacity": 0.3,
+  const defaultTheme = THEMES[defaultThemeName]?.theme || {
+    "bg color": "#2e3440",
+    "fg color": "#eceff4",
+    "main accent": "#5e81ac",
+    "accent 1": "#b48ead",
+    "accent 2": "#a3be8c",
+    "accent 3": "#d08770",
+    "accent 4": "#ebcb8b",
+    "accent 5": "#8fbcbb",
+    "panel opacity": 0.8
   };
 
   localStorage.setItem(THEME_LS_KEY, JSON.stringify(defaultTheme));
@@ -76,17 +71,17 @@ export function setTheme(theme: Theme): void {
       case "bg color": {
         document.documentElement.style.setProperty(
           "--main-bg-color",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         break;
       }
       case "fg color": {
         document.documentElement.style.setProperty(
           "--main-fg-color",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         const imageBoxBg = document.querySelector(
-          ".image-border .squiggly",
+          ".image-border .squiggly"
         ) as HTMLElement;
         const url = window.getComputedStyle(imageBoxBg).backgroundImage;
         const hex = value as string;
@@ -98,14 +93,13 @@ export function setTheme(theme: Theme): void {
       case "main accent": {
         document.documentElement.style.setProperty(
           "--main-accent",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         const linkBoxBg = document.querySelector(
-          ".links-section .squiggly",
+          ".links-section .squiggly"
         ) as HTMLElement;
         const url = window.getComputedStyle(linkBoxBg).backgroundImage;
         const hex = value as string;
-
         const newUrl = url.replace(/%23([0-9a-fA-F]{6})/, `%23${hex.slice(1)}`);
         if (newUrl === url) break;
         linkBoxBg.style.setProperty("background-image", newUrl);
@@ -114,42 +108,42 @@ export function setTheme(theme: Theme): void {
       case "accent 1": {
         document.documentElement.style.setProperty(
           "--accent-1",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         break;
       }
       case "accent 2": {
         document.documentElement.style.setProperty(
           "--accent-2",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         break;
       }
       case "accent 3": {
         document.documentElement.style.setProperty(
           "--accent-3",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         break;
       }
       case "accent 4": {
         document.documentElement.style.setProperty(
           "--accent-4",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         break;
       }
       case "accent 5": {
         document.documentElement.style.setProperty(
           "--accent-5",
-          hexToRgb(value as string),
+          hexToRgb(value as string)
         );
         break;
       }
       case "panel opacity": {
         document.documentElement.style.setProperty(
           "--panel-opacity",
-          value as string,
+          value as string
         );
       }
     }
@@ -165,9 +159,10 @@ export function validateTheme(data: any): data is Theme {
   return true;
 }
 
+// HMR: Reapply theme when this module changes
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
     const theme = getTheme();
-    setTheme(theme);
+    refreshTheme(theme);
   });
 }
