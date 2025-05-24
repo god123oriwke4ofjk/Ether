@@ -164,3 +164,10 @@ export function validateTheme(data: any): data is Theme {
   ThemeSchema.parse(data);
   return true;
 }
+
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    const theme = getTheme();
+    setTheme(theme);
+  });
+}
