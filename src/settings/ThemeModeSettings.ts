@@ -19,6 +19,12 @@ export default function initThemeModeSettings() {
       refreshTheme(theme);
       saveImageState(image);
       refreshImage(image);
+      // Update theme dropdown
+      const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+      if (select) {
+        select.value = data === "themes" ? defaultThemeName : "custom";
+        select.disabled = data === "wallbash";
+      }
     },
     render: function () {
       const sectionEl = this.sectionEl;
@@ -40,7 +46,7 @@ export default function initThemeModeSettings() {
     }
   });
 
-  // HMR: Reapply mode, theme, and image when this module changes
+  // HMR: Reapply mode, theme, and image
   if (import.meta.hot) {
     import.meta.hot.accept(() => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
@@ -49,6 +55,11 @@ export default function initThemeModeSettings() {
       refreshImage(image);
       themeModeSection.state = mode;
       themeModeSection.rerender();
+      const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+      if (select) {
+        select.value = mode === "themes" ? defaultThemeName : "custom";
+        select.disabled = mode === "wallbash";
+      }
     });
   }
 
