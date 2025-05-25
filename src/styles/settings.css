@@ -213,17 +213,19 @@ form[name="image"] .input-group {
   padding-right: 3em;
   box-sizing: border-box;
   width: 100%;
+  margin-top: 3em;
 }
 
 #theme-mode-settings .settings-title {
   color: rgb(var(--accent-1));
   margin: 0 auto 1.5em auto;
   font-family: "Roboto Mono", monospace;
+  font-size: 1.2em;
 }
 
 #theme-mode-settings .input-group {
   display: flex;
-  gap: 1em; 
+  gap: 1.5em; 
   align-items: center;
   margin-bottom: 1.8em;
 }
@@ -240,7 +242,7 @@ form[name="image"] .input-group {
 
 #theme-mode-settings .input-group input[type="radio"] {
   appearance: none;
-  width: 1em;
+  width: 1.2em;
   height: 1em;
   border: 1px solid rgb(var(--main-accent));
   border-radius: 50%;
@@ -269,20 +271,30 @@ form[name="image"] .input-group {
   color: rgb(var(--accent-3));
 }
 
+#theme-mode-settings .btn-ctn {
+  display: flex;
+  align-items: center;
+  column-gap: 1em; 
+}
+
 #theme-mode-settings button[type="submit"],
 #theme-mode-settings button[aria-label="reset"] {
-  padding: 0.5em 1em;
+  display: block;
+  position: relative;
+  padding: 0.3em 0.9em; 
   background: rgb(var(--main-bg-color));
   color: rgb(var(--main-fg-color));
-  border: 1px solid rgb(var(--main-accent));
+  border: var(--border);
   cursor: pointer;
   font-family: "Roboto Mono", monospace;
   font-size: 0.9em;
-  margin-right: 0.5em;
+  transform: translate(0, 0);
+  transition: transform 0.1s, background 0.2s, color 0.2s;
 }
 
 #theme-mode-settings button[type="submit"]:hover,
 #theme-mode-settings button[aria-label="reset"]:hover {
+  transform: translate(0.3em, -0.3em); 
   background: rgb(var(--main-accent));
   color: rgb(var(--main-bg-color));
 }
