@@ -55,7 +55,7 @@ export default function (
                     theme: getTheme(),
                     image: getImage()
                   }
-                : themes[selectEl.value];
+                : themes[selectEl.value as keyof typeof themes];
             refreshTheme(selectedTheme.theme);
             refreshImage(selectedTheme.image);
             themeSection.state = selectedTheme.theme;
