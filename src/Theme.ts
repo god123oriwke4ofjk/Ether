@@ -1,8 +1,7 @@
-import { convertCssRgbToHex, hexToRgb } from "./utils/colors";
+import { hexToRgb } from "./utils/colors";
 import { z } from "zod";
-import { defaultThemeName } from "./data/THEMES";
-import THEMES from "./data/THEMES";
-import wallbash, { wallbashThemePath } from "./wallbashTheme";
+import { themes, defaultThemeName } from "./data/THEMES";
+import wallbash from "./wallbashTheme";
 
 export const THEME_LS_KEY = "theme";
 export const THEME_MODE_LS_KEY = "themeMode";
@@ -44,7 +43,7 @@ export function getTheme(): Theme {
   if (lsItem) return JSON.parse(lsItem);
 
   const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-  const defaultTheme = mode === "themes" ? THEMES[defaultThemeName]?.theme : wallbash.theme;
+  const defaultTheme = mode === "themes" ? themes[defaultThemeName]?.theme : wallbash.theme;
 
   localStorage.setItem(THEME_LS_KEY, JSON.stringify(defaultTheme));
   return defaultTheme;
