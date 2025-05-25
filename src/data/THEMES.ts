@@ -22,7 +22,7 @@ const everforestDark = {
   },
 };
 
-const blackAndWhite = {
+const vantaBlack = {
   theme: {
     "bg color": "#000000",
     "fg color": "#ffffff",
