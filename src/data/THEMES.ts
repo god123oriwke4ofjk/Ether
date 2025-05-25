@@ -136,7 +136,7 @@ if (import.meta.hot) {
     localStorage.removeItem("image");
     localStorage.setItem("themeMode", "themes");
 
-    const { theme, image } = themes[defaultThemeName] || themes.Nord;
+    const { theme, image } = themes[defaultThemeName] || themes["Everforest Dark"];
     setTheme(theme);
     saveTheme(theme);
     setImage(image);
