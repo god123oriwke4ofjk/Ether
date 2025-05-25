@@ -1,55 +1,102 @@
-// /src/settings/ThemeModeSettings.ts
-import { ThemeState, THEME_LS_KEY, saveThemeState, refreshTheme } from "../Theme";
-import { SettingsSectionWithChildren } from "./SettingsSection";
-import { Component } from "./settingsTypes";
+import SettingsSection from "./SettingsSection";
+import { refreshTheme, saveTheme } from "../Theme";
+import { refreshImage, saveImageState } from "../Image";
+import { themes, defaultThemeName } from "../data/THEMES";
+import wallbash from "../wallbashTheme";
 
-export default function initThemeModeSettings(themeState: ThemeState) {
-  const themeModeSection = new SettingsSectionWithChildren<ThemeState>({
-    title: "Theme Mode",
-    state: themeState,
+const THEME_MODE_LS_KEY = "themeMode";
+
+export default function initThemeModeSettings() {
+  const themeModeSection = new SettingsSection<string>({
+    title: THEME_MODE_LS_KEY,
+    state: localStorage.getItem(THEME_MODE_LS_KEY) || "themes",
     sectionEl: document.getElementById("theme-mode-settings") as HTMLElement,
-    children: [
-      {
-        render: function () {
-          const sectionEl = document.getElementById("theme-mode-settings") as HTMLElement;
-          const radios = sectionEl.querySelectorAll("input[type='radio']");
-          radios.forEach((radio) => {
-            radio.addEventListener("change", (e) => {
-              const target = e.target as HTMLInputElement;
-              themeModeSection.state.mode = target.value;
-              const msg =
-                target.value === "wallbash"
-                  ? "Wallbash theme is loaded"
-                  : "Custom theme is loaded";
-              themeModeSection.displaySuccessMsg(msg);
-              // Disable/enable theme dropdown
-              const themeSelect = document.getElementById("theme-settings")?.querySelector("select") as HTMLSelectElement;
-              if (themeSelect) {
-                themeSelect.disabled = target.value === "wallbash";
-              }
-            });
-          });
-        },
-        rerender: function () {
-          const sectionEl = document.getElementById("theme-mode-settings") as HTMLElement;
-          const msgEl = sectionEl.querySelector(".msg") as HTMLElement;
-          msgEl.textContent = "";
-        },
-      },
-    ],
-    onSave: (data: ThemeState) => {
-      saveThemeState(data);
-      refreshTheme(data);
-      const msg = data.mode === "wallbash" ? "Wallbash theme is loaded" : "Custom theme is loaded";
-      themeModeSection.displaySuccessMsg(msg);
+    onSave: (data: string) => {
+      try {
+        localStorage.setItem(THEME_MODE_LS_KEY, data);
+        const { theme, image } = data === "themes" ? themes[defaultThemeName] : wallbash;
+        saveTheme(theme);
+        refreshTheme(theme);
+        saveImageState(image);
+        refreshImage(image);
+        // Update theme dropdown
+        const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+        if (select) {
+          select.value = data === "themes" ? defaultThemeName : "custom";
+          select.disabled = data === "wallbash";
+        }
+        themeModeSection.displaySuccessMsg();
+      } catch (e) {
+        console.error("Failed to save theme mode:", e);
+        themeModeSection.displayFailedMsg("Failed to save theme mode");
+      }
     },
-    onReset: () => {
-      themeModeSection.state.mode = "default"; // Adjust default mode
-      saveThemeState(themeModeSection.state);
-      refreshTheme(themeModeSection.state);
-      themeModeSection.displaySuccessMsg("Theme mode reset to default");
+    render: function () {
+      const sectionEl = this.sectionEl;
+      // Clear existing content
+      sectionEl.innerHTML = `
+        <h3>Theme Mode</h3>
+        <div class="input-group">
+          <label>
+            <input type="radio" name="themeMode" value="themes" ${this.state === "themes" ? "checked" : ""}>
+            Themes
+          </label>
+          <label>
+            <input type="radio" name="themeMode" value="wallbash" ${this.state === "wallbash" ? "checked" : ""}>
+            Wallbash
+          </label>
+        </div>
+        <div class="button-group">
+          <button class="save-btn">Save</button>
+          <span class="reset-btn">Reset</span>
+        </div>
+      `;
+
+      // Attach event listeners
+      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
+      inputs.forEach((input) => {
+        input.addEventListener("change", (e) => {
+          this.state = (e.target as HTMLInputElement).value;
+        });
+      });
+
+      const saveBtn = sectionEl.querySelector(".save-btn") as HTMLButtonElement;
+      saveBtn.addEventListener("click", () => {
+        this.onSave(this.state);
+      });
+
+      const resetBtn = sectionEl.querySelector(".reset-btn") as HTMLElement;
+      resetBtn.addEventListener("click", () => {
+        this.state = "themes";
+        this.rerender();
+        this.onSave("themes");
+      });
     },
+    rerender: function () {
+      const inputs = this.sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
+      inputs.forEach((input) => {
+        input.checked = input.value === this.state;
+      });
+    }
   });
+
+  // HMR: Reapply mode, theme, and image
+  if (import.meta.hot) {
+    import.meta.hot.accept(["../data/THEMES"], () => {
+      const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
+      const { theme, image } = mode === "themes" ? themes[defaultThemeName] : wallbash;
+      refreshTheme(theme);
+      refreshImage(image);
+      themeModeSection.state = mode;
+      themeModeSection.rerender();
+      const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+      if (select) {
+        select.value = mode === "themes" ? defaultThemeName : "custom";
+        select.disabled = mode === "wallbash";
+      }
+      console.log(`HMR: ThemeModeSettings updated to ${defaultThemeName}`);
+    });
+  }
 
   return themeModeSection;
 }
