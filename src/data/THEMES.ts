@@ -22,7 +22,7 @@ const everforestDark = {
   },
 };
 
-const vantaBlack = {
+const blackAndWhite = {
   theme: {
     "bg color": "#000000",
     "fg color": "#ffffff",
@@ -119,7 +119,7 @@ const dracula = {
 
 const themes = {
   "Everforest Dark": everforestDark,
-  "Vanta Black": vantaBlack,
+  "Black & White": blackAndWhite,
   Gruvbox: gruvbox,
   Nord: nord,
   Catppuccin: catppuccin,
@@ -136,7 +136,7 @@ if (import.meta.hot) {
     localStorage.removeItem("image");
     localStorage.setItem("themeMode", "themes");
 
-    const { theme, image } = themes[defaultThemeName] || themes.Nord; // Fallback to Nord
+    const { theme, image } = themes[defaultThemeName] || themes.Nord;
     setTheme(theme);
     saveTheme(theme);
     setImage(image);
