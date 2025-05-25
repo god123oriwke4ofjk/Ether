@@ -1,9 +1,9 @@
 import { setTheme, saveTheme } from "../Theme";
 import { setImage, saveImageState } from "../Image";
 
-export const defaultThemeName = "nord";
+export const defaultThemeName = "Nord";
 
-const everforest_dark = {
+const everforestDark = {
   theme: {
     "bg color": "#2d353b",
     "fg color": "#d3c6aa",
@@ -22,7 +22,7 @@ const everforest_dark = {
   },
 };
 
-const bw = {
+const blackAndWhite = {
   theme: {
     "bg color": "#000000",
     "fg color": "#ffffff",
@@ -118,12 +118,12 @@ const dracula = {
 };
 
 const themes = {
-  everforest_dark,
-  catppuccin,
-  dracula,
-  gruvbox,
-  nord,
-  bw
+  "Everforest Dark": everforestDark,
+  "Vanta Black": vantaBlack,
+  Gruvbox: gruvbox,
+  Nord: nord,
+  Catppuccin: catppuccin,
+  Dracula: dracula,
 };
 
 if (!themes[defaultThemeName]) {
@@ -136,7 +136,7 @@ if (import.meta.hot) {
     localStorage.removeItem("image");
     localStorage.setItem("themeMode", "themes");
 
-    const { theme, image } = themes[defaultThemeName] || themes.nord; // Fallback to nord
+    const { theme, image } = themes[defaultThemeName] || themes.Nord; // Fallback to Nord
     setTheme(theme);
     saveTheme(theme);
     setImage(image);
