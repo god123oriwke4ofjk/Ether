@@ -151,10 +151,11 @@ export function validateTheme(data: any): data is Theme {
   return true;
 }
 
-// HMR: Reapply theme when this module changes
+// HMR: Reapply theme when this module or THEMES.ts changes
 if (import.meta.hot) {
-  import.meta.hot.accept(() => {
+  import.meta.hot.accept(["./data/THEMES"], () => {
     const theme = getTheme();
     refreshTheme(theme);
+    console.log(`HMR: Reapplied theme ${defaultThemeName}`);
   });
 }
