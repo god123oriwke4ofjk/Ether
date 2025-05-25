@@ -123,8 +123,7 @@ const themes = {
   dracula,
   gruvbox,
   nord,
-  bw,
-  solarized
+  bw
 };
 
 if (!themes[defaultThemeName]) {
