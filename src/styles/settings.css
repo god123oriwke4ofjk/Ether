@@ -213,19 +213,19 @@ form[name="image"] .input-group {
   padding-right: 3em;
   box-sizing: border-box;
   width: 100%;
-  margin-top: 3em;
+  margin-top: 3em; 
 }
 
 #theme-mode-settings .settings-title {
   color: rgb(var(--accent-1));
   margin: 0 auto 1.5em auto;
   font-family: "Roboto Mono", monospace;
-  font-size: 1.2em;
+  font-size: 1.2em; 
 }
 
 #theme-mode-settings .input-group {
   display: flex;
-  gap: 1.5em; 
+  gap: 1.5em;
   align-items: center;
   margin-bottom: 1.8em;
 }
@@ -237,17 +237,18 @@ form[name="image"] .input-group {
   color: rgb(var(--main-fg-color));
   cursor: pointer;
   font-family: "Roboto Mono", monospace;
-  font-size: 0.9em; 
+  font-size: 0.9em;
 }
 
 #theme-mode-settings .input-group input[type="radio"] {
   appearance: none;
   width: 1.2em;
-  height: 1em;
+  height: 1.2em;
   border: 1px solid rgb(var(--main-accent));
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 #theme-mode-settings .input-group input[type="radio"]:checked {
@@ -268,7 +269,7 @@ form[name="image"] .input-group {
 }
 
 #theme-mode-settings.error .msg {
-  color: rgb(var(--accent-3));
+  color: rgb(var(--accent-3)); 
 }
 
 #theme-mode-settings .btn-ctn {
@@ -278,13 +279,13 @@ form[name="image"] .input-group {
 }
 
 #theme-mode-settings button[type="submit"],
-#theme-mode-settings button[aria-label="reset"] {
+#theme-mode-settings span[aria-label="reset"] {
   display: block;
   position: relative;
   padding: 0.3em 0.9em; 
   background: rgb(var(--main-bg-color));
   color: rgb(var(--main-fg-color));
-  border: var(--border);
+  border: var(--border); 
   cursor: pointer;
   font-family: "Roboto Mono", monospace;
   font-size: 0.9em;
@@ -293,7 +294,7 @@ form[name="image"] .input-group {
 }
 
 #theme-mode-settings button[type="submit"]:hover,
-#theme-mode-settings button[aria-label="reset"]:hover {
+#theme-mode-settings span[aria-label="reset"]:hover {
   transform: translate(0.3em, -0.3em); 
   background: rgb(var(--main-accent));
   color: rgb(var(--main-bg-color));
