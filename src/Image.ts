@@ -52,10 +52,11 @@ export function saveImageState(data: any) {
   localStorage.setItem(IMAGE_LS_KEY, JSON.stringify(data));
 }
 
-// HMR: Reapply image when this module changes
+// HMR: Reapply image when this module or THEMES.ts changes
 if (import.meta.hot) {
-  import.meta.hot.accept(() => {
+  import.meta.hot.accept(["./data/THEMES"], () => {
     const image = getImage();
     refreshImage(image);
+    console.log(`HMR: Reapplied image for theme ${defaultThemeName}`);
   });
 }
