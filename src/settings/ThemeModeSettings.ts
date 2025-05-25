@@ -13,35 +13,38 @@ export default function initThemeModeSettings() {
     state: localStorage.getItem(THEME_MODE_LS_KEY) || "themes",
     sectionEl: document.getElementById("theme-mode-settings") as HTMLElement,
     onSave: (data: string) => {
-      localStorage.setItem(THEME_MODE_LS_KEY, data);
-      const { theme, image } = data === "themes" ? THEMES[defaultThemeName] : wallbash;
-      saveTheme(theme);
-      refreshTheme(theme);
-      saveImageState(image);
-      refreshImage(image);
-      // Update theme dropdown
-      const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
-      if (select) {
-        select.value = data === "themes" ? defaultThemeName : "custom";
-        select.disabled = data === "wallbash";
+      try {
+        localStorage.setItem(THEME_MODE_LS_KEY, data);
+        const { theme, image } = data === "themes" ? THEMES[defaultThemeName] : wallbash;
+        saveTheme(theme);
+        refreshTheme(theme);
+        saveImageState(image);
+        refreshImage(image);
+        // Update theme dropdown
+        const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+        if (select) {
+          select.value = data === "themes" ? defaultThemeName : "custom";
+          select.disabled = data === "wallbash";
+        }
+        themeModeSection.displaySuccessMsg();
+      } catch (e) {
+        themeModeSection.displayFailedMsg("Failed to save theme mode");
       }
     },
     render: function () {
       const sectionEl = this.sectionEl;
-      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]');
+      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
         input.addEventListener("change", (e) => {
           this.state = (e.target as HTMLInputElement).value;
         });
-        if (input.value === this.state) {
-          (input as HTMLInputElement).checked = true;
-        }
+        input.checked = input.value === this.state;
       });
     },
     rerender: function () {
-      const inputs = this.sectionEl.querySelectorAll('input[name="themeMode"]');
+      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
-        (input as HTMLInputElement).checked = input.value === this.state;
+        input.checked = input.value === this.state;
       });
     }
   });
