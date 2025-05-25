@@ -27,16 +27,49 @@ export default function initThemeModeSettings() {
         }
         themeModeSection.displaySuccessMsg();
       } catch (e) {
+        console.error("Failed to save theme mode:", e);
         themeModeSection.displayFailedMsg("Failed to save theme mode");
       }
     },
     render: function () {
-      const inputs = this.sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
+      const sectionEl = this.sectionEl;
+      // Clear existing content
+      sectionEl.innerHTML = `
+        <h3>Theme Mode</h3>
+        <div class="input-group">
+          <label>
+            <input type="radio" name="themeMode" value="themes" ${this.state === "themes" ? "checked" : ""}>
+            Themes
+          </label>
+          <label>
+            <input type="radio" name="themeMode" value="wallbash" ${this.state === "wallbash" ? "checked" : ""}>
+            Wallbash
+          </label>
+        </div>
+        <div class="button-group">
+          <button class="save-btn">Save</button>
+          <span class="reset-btn">Reset</span>
+        </div>
+      `;
+
+      // Attach event listeners
+      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
         input.addEventListener("change", (e) => {
           this.state = (e.target as HTMLInputElement).value;
         });
-        input.checked = input.value === this.state;
+      });
+
+      const saveBtn = sectionEl.querySelector(".save-btn") as HTMLButtonElement;
+      saveBtn.addEventListener("click", () => {
+        this.onSave(this.state);
+      });
+
+      const resetBtn = sectionEl.querySelector(".reset-btn") as HTMLElement;
+      resetBtn.addEventListener("click", () => {
+        this.state = "themes";
+        this.rerender();
+        this.onSave("themes");
       });
     },
     rerender: function () {
