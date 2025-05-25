@@ -60,6 +60,9 @@ export default function initThemeModeSettings() {
       inputs.forEach((input) => {
         input.addEventListener("change", (e) => {
           this.state = (e.target as HTMLInputElement).value;
+          // Show immediate feedback on change
+          const message = this.state === "wallbash" ? "Wallbash theme selected" : "Default theme selected";
+          themeModeSection.displaySuccessMsg(message);
         });
       });
 
@@ -81,6 +84,9 @@ export default function initThemeModeSettings() {
       inputs.forEach((input) => {
         input.checked = input.value === this.state;
       });
+      // Ensure message reflects current state
+      const message = this.state === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
+      themeModeSection.displaySuccessMsg(message);
     }
   });
 
