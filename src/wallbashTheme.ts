@@ -1,3 +1,6 @@
+import { Theme } from "./Theme";
+import { ImageState } from "./Image";
+
 const wallbash = {
   theme: {
     "bg color": "#1a1a1a",
@@ -16,8 +19,6 @@ const wallbash = {
     "position y": "50%",
   },
 };
-
-export const wallbashThemePath = `${import.meta.env.BASE_URL}ilya-kuvshinov-untitled-1.jpg)`;
 
 export default wallbash;
 
