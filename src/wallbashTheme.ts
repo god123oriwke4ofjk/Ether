@@ -1,10 +1,7 @@
-import { Theme } from "./Theme";
-import { ImageState } from "./Image";
-
 const wallbash = {
   theme: {
-    "bg color": "#1a1a1a",
-    "fg color": "#f5f5f5",
+    "bg color": "#ffffff",
+    "fg color": "#000000",
     "main accent": "#ff5555",
     "accent 1": "#55ff55",
     "accent 2": "#5555ff",
