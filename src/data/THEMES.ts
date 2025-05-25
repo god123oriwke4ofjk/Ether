@@ -137,7 +137,7 @@ if (import.meta.hot) {
     saveTheme(theme);
     setImage(image);
     saveImageState(image);
-    const select = document.querySelector('select[name="load theme"]');
+    const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
     if (select) select.value = defaultThemeName;
   });
 }
