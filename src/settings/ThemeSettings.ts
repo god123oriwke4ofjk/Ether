@@ -38,10 +38,6 @@ export default function (
             text: "Custom",
             value: "custom"
           });
-          const wallbashOption = DomRender.option({
-            text: "Wallbash",
-            value: "wallbash"
-          });
           selectEl.append(customOption);
 
           for (const key of Object.keys(themes)) {
@@ -52,23 +48,18 @@ export default function (
             selectEl.append(optionEl);
           }
           const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-          selectEl.value = mode === "themes" ? defaultThemeName : "wallbash";
+          selectEl.value = mode === "themes" ? defaultThemeName : "custom";
           selectEl.disabled = mode === "wallbash";
 
           selectEl.addEventListener("change", () => {
-            const value = selectEl.value as ThemeKey | "custom" | "wallbash";
-            let selectedTheme;
-            if (value == "wallbash") {
-              selectedTheme = wallbash;
-              localStorage.setItem(THEME_MODE_LS_KEY, "wallbash");
-            } else if (value == "custom") {
-              selectedTheme = {
-                theme: getTheme(),
-                image: getImage()
-              };
-            } else {
-              selectedTheme = themes[value];
-            }
+            const value = selectEl.value as ThemeKey | "custom";
+            const selectedTheme =
+              value === "custom"
+                ? {
+                    theme: getTheme(),
+                    image: getImage()
+                  }
+                : themes[value];
             refreshTheme(selectedTheme.theme);
             refreshImage(selectedTheme.image);
             themeSection.state = selectedTheme.theme;
@@ -89,8 +80,8 @@ export default function (
           const currentTheme = getTheme();
           const themeKey = Object.keys(themes).find(
             (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
-          ) || (mode === "wallbash" ? "wallbash" : "custom");
-          selectEl.value = mode === "themes" ? themeKey : "wallbash";
+          ) || "custom";
+          selectEl.value = mode === "themes" ? themeKey : "custom";
           selectEl.disabled = mode === "wallbash";
         }
       },
