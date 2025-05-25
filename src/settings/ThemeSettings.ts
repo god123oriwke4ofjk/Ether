@@ -32,7 +32,7 @@ export default function (
           ) as HTMLSelectElement;
           selectEl.innerHTML = "";
           const customOption = DomRender.option({
-            text: "custom",
+            text: "Custom",
             value: "custom"
           });
           selectEl.append(customOption);
@@ -55,7 +55,7 @@ export default function (
                     theme: getTheme(),
                     image: getImage()
                   }
-                : themes[selectEl.value as keyof typeof themes];
+                : themes[selectEl.value];
             refreshTheme(selectedTheme.theme);
             refreshImage(selectedTheme.image);
             themeSection.state = selectedTheme.theme;
@@ -118,7 +118,7 @@ export default function (
       if (selectEl) {
         selectEl.innerHTML = "";
         const customOption = DomRender.option({
-          text: "custom",
+          text: "Custom",
           value: "custom"
         });
         selectEl.append(customOption);
