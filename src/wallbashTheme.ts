@@ -17,7 +17,7 @@ const wallbash = {
   },
 };
 
-export const wallbashThemePath = `${import.meta.env.BASE_URL}wallbash-image.jpg`;
+export const wallbashThemePath = `${import.meta.env.BASE_URL}ilya-kuvshinov-untitled-1.jpg)`;
 
 export default wallbash;
 
