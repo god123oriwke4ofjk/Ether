@@ -1,5 +1,5 @@
 import { z } from "zod";
-import THEMES, { defaultThemeName } from "./data/THEMES";
+import { themes, defaultThemeName } from "./data/THEMES";
 import wallbash from "./wallbashTheme";
 
 export const IMAGE_LS_KEY = "image";
@@ -26,7 +26,7 @@ export function getImage(): ImageState {
   if (lsItem) return JSON.parse(lsItem);
 
   const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-  const imageState = mode === "themes" ? THEMES[defaultThemeName]?.image : wallbash.image;
+  const imageState = mode === "themes" ? themes[defaultThemeName]?.image : wallbash.image;
 
   localStorage.setItem(IMAGE_LS_KEY, JSON.stringify(imageState));
   return imageState;
