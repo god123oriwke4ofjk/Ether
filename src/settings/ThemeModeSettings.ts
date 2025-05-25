@@ -27,7 +27,12 @@ export default function initThemeModeSettings() {
         }
         // Display specific success message
         const message = data === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
-        themeModeSection.displaySuccessMsg(message);
+        const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
+        if (msgEl) {
+          msgEl.textContent = message;
+          msgEl.classList.remove("error");
+        }
+        themeModeSection.displaySuccessMsg(); // Call without argument
       } catch (e) {
         console.error("Failed to save theme mode:", e);
         themeModeSection.displayFailedMsg("Failed to save theme mode");
@@ -62,7 +67,12 @@ export default function initThemeModeSettings() {
           this.state = (e.target as HTMLInputElement).value;
           // Show immediate feedback on change
           const message = this.state === "wallbash" ? "Wallbash theme selected" : "Default theme selected";
-          themeModeSection.displaySuccessMsg(message);
+          const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
+          if (msgEl) {
+            msgEl.textContent = message;
+            msgEl.classList.remove("error");
+          }
+          themeModeSection.displaySuccessMsg();
         });
       });
 
@@ -76,7 +86,12 @@ export default function initThemeModeSettings() {
         this.state = "themes";
         this.rerender();
         this.onSave("themes");
-        themeModeSection.displaySuccessMsg("Theme reset to default");
+        const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
+        if (msgEl) {
+          msgEl.textContent = "Theme reset to default";
+          msgEl.classList.remove("error");
+        }
+        themeModeSection.displaySuccessMsg();
       });
     },
     rerender: function () {
@@ -86,7 +101,12 @@ export default function initThemeModeSettings() {
       });
       // Ensure message reflects current state
       const message = this.state === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
-      themeModeSection.displaySuccessMsg(message);
+      const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
+      if (msgEl) {
+        msgEl.textContent = message;
+        msgEl.classList.remove("error");
+      }
+      themeModeSection.displaySuccessMsg();
     }
   });
 
