@@ -22,7 +22,7 @@ export default function initThemeModeSettings() {
         // Update theme dropdown
         const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
         if (select) {
-          select.value = data === "themes" ? defaultThemeName : "wallbash";
+          select.value = data === "themes" ? defaultThemeName : "custom";
           select.disabled = data === "wallbash";
         }
         // Display specific success message
@@ -30,11 +30,9 @@ export default function initThemeModeSettings() {
         const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
         if (msgEl) {
           msgEl.textContent = message;
-          msgEl.classList.remove("error", "hide");
-          setTimeout(() => {
-            msgEl.classList.add("hide");
-          }, 3000);
+          msgEl.classList.remove("error");
         }
+        themeModeSection.displaySuccessMsg(); // Call without argument
       } catch (e) {
         console.error("Failed to save theme mode:", e);
         themeModeSection.displayFailedMsg("Failed to save theme mode");
@@ -72,11 +70,9 @@ export default function initThemeModeSettings() {
           const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
           if (msgEl) {
             msgEl.textContent = message;
-            msgEl.classList.remove("error", "hide");
-            setTimeout(() => {
-              msgEl.classList.add("hide");
-            }, 3000);
+            msgEl.classList.remove("error");
           }
+          themeModeSection.displaySuccessMsg();
         });
       });
 
@@ -93,11 +89,9 @@ export default function initThemeModeSettings() {
         const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
         if (msgEl) {
           msgEl.textContent = "Theme reset to default";
-          msgEl.classList.remove("error", "hide");
-          setTimeout(() => {
-            msgEl.classList.add("hide");
-          }, 3000);
+          msgEl.classList.remove("error");
         }
+        themeModeSection.displaySuccessMsg();
       });
     },
     rerender: function () {
@@ -110,11 +104,9 @@ export default function initThemeModeSettings() {
       const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
       if (msgEl) {
         msgEl.textContent = message;
-        msgEl.classList.remove("error", "hide");
-        setTimeout(() => {
-          msgEl.classList.add("hide");
-        }, 3000);
+        msgEl.classList.remove("error");
       }
+      themeModeSection.displaySuccessMsg();
     }
   });
 
@@ -129,7 +121,7 @@ export default function initThemeModeSettings() {
       themeModeSection.rerender();
       const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
       if (select) {
-        select.value = mode === "themes" ? defaultThemeName : "wallbash";
+        select.value = mode === "themes" ? defaultThemeName : "custom";
         select.disabled = mode === "wallbash";
       }
       console.log(`HMR: ThemeModeSettings updated to ${defaultThemeName}`);
