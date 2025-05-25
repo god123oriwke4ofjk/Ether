@@ -132,13 +132,23 @@ if (!themes[defaultThemeName]) {
 
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
-    const { theme, image } = themes[defaultThemeName] || themes.nord; // Fallback to nord if invalid
+    localStorage.removeItem("theme");
+    localStorage.removeItem("image");
+    localStorage.setItem("themeMode", "themes");
+
+    const { theme, image } = themes[defaultThemeName] || themes.nord; // Fallback to nord
     setTheme(theme);
     saveTheme(theme);
     setImage(image);
     saveImageState(image);
+
     const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
-    if (select) select.value = defaultThemeName;
+    if (select) {
+      select.value = defaultThemeName;
+      select.disabled = false;
+    }
+
+    console.log(`HMR: Applied theme ${defaultThemeName}`);
   });
 }
 
