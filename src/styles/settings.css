@@ -210,17 +210,20 @@ form[name="image"] .input-group {
 
 
 #theme-mode-settings {
+  margin: 0 auto; 
+  width: 50%; 
+  min-width: 400px; 
+  max-width: 80%; 
   padding-right: 3em;
   box-sizing: border-box;
-  width: 100%;
-  margin-top: 3em; 
+  margin-top: 3em;
 }
 
 #theme-mode-settings .settings-title {
   color: rgb(var(--accent-1));
   margin: 0 auto 1.5em auto;
   font-family: "Roboto Mono", monospace;
-  font-size: 1.2em; 
+  font-size: 1.2em;
 }
 
 #theme-mode-settings .input-group {
@@ -269,23 +272,23 @@ form[name="image"] .input-group {
 }
 
 #theme-mode-settings.error .msg {
-  color: rgb(var(--accent-3)); 
+  color: rgb(var(--accent-3));
 }
 
 #theme-mode-settings .btn-ctn {
   display: flex;
   align-items: center;
-  column-gap: 1em; 
+  column-gap: 1em;
 }
 
 #theme-mode-settings button[type="submit"],
 #theme-mode-settings span[aria-label="reset"] {
   display: block;
   position: relative;
-  padding: 0.3em 0.9em; 
+  padding: 0.3em 0.9em;
   background: rgb(var(--main-bg-color));
   color: rgb(var(--main-fg-color));
-  border: var(--border); 
+  border: var(--border);
   cursor: pointer;
   font-family: "Roboto Mono", monospace;
   font-size: 0.9em;
@@ -295,7 +298,7 @@ form[name="image"] .input-group {
 
 #theme-mode-settings button[type="submit"]:hover,
 #theme-mode-settings span[aria-label="reset"]:hover {
-  transform: translate(0.3em, -0.3em); 
+  transform: translate(0.3em, -0.3em);
   background: rgb(var(--main-accent));
   color: rgb(var(--main-bg-color));
 }
