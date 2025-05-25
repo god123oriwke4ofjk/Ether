@@ -25,7 +25,9 @@ export default function initThemeModeSettings() {
           select.value = data === "themes" ? defaultThemeName : "custom";
           select.disabled = data === "wallbash";
         }
-        themeModeSection.displaySuccessMsg();
+        // Display specific success message
+        const message = data === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
+        themeModeSection.displaySuccessMsg(message);
       } catch (e) {
         console.error("Failed to save theme mode:", e);
         themeModeSection.displayFailedMsg("Failed to save theme mode");
@@ -35,7 +37,7 @@ export default function initThemeModeSettings() {
       const sectionEl = this.sectionEl;
       // Clear existing content
       sectionEl.innerHTML = `
-        <h3>Theme Mode</h3>
+        <h3 class="settings-title">Theme Mode</h3>
         <div class="input-group">
           <label>
             <input type="radio" name="themeMode" value="themes" ${this.state === "themes" ? "checked" : ""}>
@@ -46,10 +48,11 @@ export default function initThemeModeSettings() {
             Wallbash
           </label>
         </div>
-        <div class="button-group">
-          <button class="save-btn">Save</button>
-          <span class="reset-btn">Reset</span>
+        <div class="btn-ctn">
+          <button class="save-btn" type="submit">Save</button>
+          <span class="reset-btn" aria-label="reset">Reset</span>
         </div>
+        <p class="msg"></p>
       `;
 
       // Attach event listeners
@@ -70,6 +73,7 @@ export default function initThemeModeSettings() {
         this.state = "themes";
         this.rerender();
         this.onSave("themes");
+        themeModeSection.displaySuccessMsg("Theme reset to default");
       });
     },
     rerender: function () {
