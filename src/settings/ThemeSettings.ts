@@ -38,7 +38,11 @@ export default function (
             text: "Custom",
             value: "custom"
           });
-          selectEl.append(customOption);
+          const wallbashOption = DomRender.option({
+            text: "Wallbash",
+            value: "wallbash"
+          });
+          selectEl.append(customOption, wallbashOption);
 
           for (const key of Object.keys(themes)) {
             const optionEl = DomRender.option({
@@ -48,18 +52,24 @@ export default function (
             selectEl.append(optionEl);
           }
           const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-          selectEl.value = mode === "themes" ? defaultThemeName : "custom";
+          selectEl.value = mode === "themes" ? defaultThemeName : "wallbash";
           selectEl.disabled = mode === "wallbash";
 
           selectEl.addEventListener("change", () => {
-            const value = selectEl.value as ThemeKey | "custom";
-            const selectedTheme =
-              value === "custom"
-                ? {
-                    theme: getTheme(),
-                    image: getImage()
-                  }
-                : themes[value];
+            const value = selectEl.value as ThemeKey | "custom" | "wallbash";
+            let selectedTheme;
+            if (value === "wallbash") {
+              selectedTheme = wallbash;
+              localStorage.setItem(THEME_MODE_LS_KEY, "wallbash");
+            } else if (value === "custom") {
+              selectedTheme = {
+                theme: getTheme(),
+                image: getImage()
+              };
+            } else {
+              selectedTheme = themes[value];
+              localStorage.setItem(THEME_MODE_LS_KEY, "themes");
+            }
             refreshTheme(selectedTheme.theme);
             refreshImage(selectedTheme.image);
             themeSection.state = selectedTheme.theme;
@@ -80,8 +90,8 @@ export default function (
           const currentTheme = getTheme();
           const themeKey = Object.keys(themes).find(
             (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
-          ) || "custom";
-          selectEl.value = mode === "themes" ? themeKey : "custom";
+          ) || (mode === "wallbash" ? "wallbash" : "custom");
+          selectEl.value = mode === "themes" ? themeKey : "wallbash";
           selectEl.disabled = mode === "wallbash";
         }
       },
@@ -109,6 +119,11 @@ export default function (
       saveTheme(themeSection.state);
       saveImageState(imageSection.state);
       refreshTheme(themeSection.state);
+      const selectEl = document.querySelector(
+        "#theme-settings select"
+      ) as HTMLSelectElement;
+      selectEl.value = "custom";
+      localStorage.setItem(THEME_MODE_LS_KEY, "themes");
     }
   });
 
@@ -133,7 +148,11 @@ export default function (
           text: "Custom",
           value: "custom"
         });
-        selectEl.append(customOption);
+        const wallbashOption = DomRender.option({
+          text: "Wallbash",
+          value: "wallbash"
+        });
+        selectEl.append(customOption, wallbashOption);
         for (const key of Object.keys(themes)) {
           const optionEl = DomRender.option({
             text: key,
@@ -144,8 +163,8 @@ export default function (
         const currentTheme = getTheme();
         const themeKey = Object.keys(themes).find(
           (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
-        ) || "custom";
-        selectEl.value = mode === "themes" ? themeKey : "custom";
+        ) || (mode === "wallbash" ? "wallbash" : "custom");
+        selectEl.value = mode === "themes" ? themeKey : "wallbash";
         selectEl.disabled = mode === "wallbash";
       }
       console.log(`HMR: ThemeSettings updated to ${defaultThemeName}`);
