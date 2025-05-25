@@ -1,5 +1,6 @@
 import { StringKeyObj } from "../../types/interfaces";
-import THEMES, { defaultThemeName } from "../data/THEMES";
+import { themes, defaultThemeName } from "../data/THEMES";
+import wallbash from "../wallbashTheme";
 import DomRender from "../DomRender";
 import { getImage, ImageState, refreshImage, saveImageState } from "../Image";
 import {
@@ -36,7 +37,7 @@ export default function (
           });
           selectEl.append(customOption);
 
-          for (const key of Object.keys(THEMES)) {
+          for (const key of Object.keys(themes)) {
             const optionEl = DomRender.option({
               text: key,
               value: key
@@ -54,7 +55,7 @@ export default function (
                     theme: getTheme(),
                     image: getImage()
                   }
-                : THEMES[selectEl.value as keyof typeof THEMES];
+                : themes[selectEl.value as keyof typeof themes];
             refreshTheme(selectedTheme.theme);
             refreshImage(selectedTheme.image);
             themeSection.state = selectedTheme.theme;
@@ -103,7 +104,7 @@ export default function (
   if (import.meta.hot) {
     import.meta.hot.accept(() => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-      const selectedTheme = mode === "themes" ? THEMES[defaultThemeName] : wallbash;
+      const selectedTheme = mode === "themes" ? themes[defaultThemeName] : wallbash;
       refreshTheme(selectedTheme.theme);
       refreshImage(selectedTheme.image);
       themeSection.state = selectedTheme.theme;
@@ -121,7 +122,7 @@ export default function (
           value: "custom"
         });
         selectEl.append(customOption);
-        for (const key of Object.keys(THEMES)) {
+        for (const key of Object.keys(themes)) {
           const optionEl = DomRender.option({
             text: key,
             value: key
