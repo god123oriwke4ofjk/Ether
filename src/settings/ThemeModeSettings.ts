@@ -1,8 +1,7 @@
-import { SettingsSection } from "./SettingsSection";
-import DomRender from "../DomRender";
+import SettingsSection from "./SettingsSection";
 import { refreshTheme, saveTheme } from "../Theme";
 import { refreshImage, saveImageState } from "../Image";
-import THEMES, { defaultThemeName } from "../data/THEMES";
+import { themes, defaultThemeName } from "../data/THEMES";
 import wallbash from "../wallbashTheme";
 
 const THEME_MODE_LS_KEY = "themeMode";
@@ -15,7 +14,7 @@ export default function initThemeModeSettings() {
     onSave: (data: string) => {
       try {
         localStorage.setItem(THEME_MODE_LS_KEY, data);
-        const { theme, image } = data === "themes" ? THEMES[defaultThemeName] : wallbash;
+        const { theme, image } = data === "themes" ? themes[defaultThemeName] : wallbash;
         saveTheme(theme);
         refreshTheme(theme);
         saveImageState(image);
@@ -32,8 +31,7 @@ export default function initThemeModeSettings() {
       }
     },
     render: function () {
-      const sectionEl = this.sectionEl;
-      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
+      const inputs = this.sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
         input.addEventListener("change", (e) => {
           this.state = (e.target as HTMLInputElement).value;
@@ -42,7 +40,7 @@ export default function initThemeModeSettings() {
       });
     },
     rerender: function () {
-      const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
+      const inputs = this.sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
         input.checked = input.value === this.state;
       });
@@ -53,7 +51,7 @@ export default function initThemeModeSettings() {
   if (import.meta.hot) {
     import.meta.hot.accept(() => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-      const { theme, image } = mode === "themes" ? THEMES[defaultThemeName] : wallbash;
+      const { theme, image } = mode === "themes" ? themes[defaultThemeName] : wallbash;
       refreshTheme(theme);
       refreshImage(image);
       themeModeSection.state = mode;
