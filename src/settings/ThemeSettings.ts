@@ -16,6 +16,9 @@ import SettingsSection, {
   SettingsSectionWithChildren
 } from "./SettingsSection";
 
+// Define theme keys type
+type ThemeKey = keyof typeof themes;
+
 export default function (
   theme: Theme,
   imageSection: SettingsSection<ImageState>
@@ -49,19 +52,25 @@ export default function (
           selectEl.disabled = mode === "wallbash";
 
           selectEl.addEventListener("change", () => {
+            const value = selectEl.value as ThemeKey | "custom";
             const selectedTheme =
-              selectEl.value === "custom"
+              value === "custom"
                 ? {
                     theme: getTheme(),
                     image: getImage()
                   }
-                : themes[selectEl.value as keyof typeof themes];
+                : themes[value];
             refreshTheme(selectedTheme.theme);
             refreshImage(selectedTheme.image);
             themeSection.state = selectedTheme.theme;
             imageSection.state = selectedTheme.image;
             themeSection.rerender();
             imageSection.rerender();
+            // Update localStorage to reflect selected theme
+            if (value !== "custom") {
+              localStorage.setItem(THEME_LS_KEY, JSON.stringify(selectedTheme.theme));
+              localStorage.setItem("image", JSON.stringify(selectedTheme.image));
+            }
           });
         },
         rerender: () => {
@@ -69,7 +78,11 @@ export default function (
             "#theme-settings select"
           ) as HTMLSelectElement;
           const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-          selectEl.value = mode === "themes" ? defaultThemeName : "custom";
+          const currentTheme = getTheme();
+          const themeKey = Object.keys(themes).find(
+            (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
+          ) || "custom";
+          selectEl.value = mode === "themes" ? themeKey : "custom";
           selectEl.disabled = mode === "wallbash";
         }
       },
@@ -129,7 +142,11 @@ export default function (
           });
           selectEl.append(optionEl);
         }
-        selectEl.value = mode === "themes" ? defaultThemeName : "custom";
+        const currentTheme = getTheme();
+        const themeKey = Object.keys(themes).find(
+          (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
+        ) || "custom";
+        selectEl.value = mode === "themes" ? themeKey : "custom";
         selectEl.disabled = mode === "wallbash";
       }
       console.log(`HMR: ThemeSettings updated to ${defaultThemeName}`);
