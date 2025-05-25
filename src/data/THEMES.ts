@@ -142,4 +142,4 @@ if (import.meta.hot) {
   });
 }
 
-export themes;
+export { themes };
