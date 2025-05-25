@@ -11,7 +11,7 @@ const wallbash = {
     "panel opacity": 0.7,
   },
   image: {
-    image: `url(${import.meta.env.BASE_URL}wallbash-image.jpg)`,
+    image: `url(${import.meta.env.BASE_URL}ilya-kuvshinov-untitled-1.jpg)`,
     "position x": "50%",
     "position y": "50%",
   },
