@@ -1,7 +1,7 @@
 import { setTheme, saveTheme } from "../Theme";
 import { setImage, saveImageState } from "../Image";
 
-export const defaultThemeName = "Nord";
+export const defaultThemeName = "Nordic Blue";
 
 const everforestDark = {
   theme: {
