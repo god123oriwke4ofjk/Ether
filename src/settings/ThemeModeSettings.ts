@@ -49,7 +49,7 @@ export default function initThemeModeSettings() {
 
   // HMR: Reapply mode, theme, and image
   if (import.meta.hot) {
-    import.meta.hot.accept(() => {
+    import.meta.hot.accept(["../data/THEMES"], () => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
       const { theme, image } = mode === "themes" ? themes[defaultThemeName] : wallbash;
       refreshTheme(theme);
@@ -61,6 +61,7 @@ export default function initThemeModeSettings() {
         select.value = mode === "themes" ? defaultThemeName : "custom";
         select.disabled = mode === "wallbash";
       }
+      console.log(`HMR: ThemeModeSettings updated to ${defaultThemeName}`);
     });
   }
 
