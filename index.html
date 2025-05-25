@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
   <head>
     <title>New Tab</title>
@@ -336,6 +335,24 @@ l43 -17 -4 23 c-258 1206 -288 1361 -288 1477 0 101 17 186 49 249 55 107 174
         <h2 class="settings-title settings-width">s e t t i n g s</h2>
         <div class="scroller-wrapper">
           <div class="scroller">
+            <!-- Added Theme Mode Section -->
+            <section id="theme-mode-settings" class="settings-section">
+              <h3 class="settings-section-title">theme mode</h3>
+              <div class="settings-content">
+                <div class="input-group">
+                  <label><input type="radio" name="themeMode" value="themes" checked> Themes</label>
+                  <label><input type="radio" name="themeMode" value="wallbash"> Wallbash</label>
+                </div>
+                <div class="btn-ctn">
+                  <button type="submit" class="outline-button">
+                    <div class="button-text">Save</div>
+                    <div class="border"></div>
+                  </button>
+                  <button type="button" aria-label="reset" class="underline-anime">Reset</button>
+                  <div class="hide msg"></div>
+                </div>
+              </div>
+            </section>
             <section id="theme-settings" class="settings-section">
               <h3 class="settings-section-title">theme</h3>
               <div class="settings-content">
@@ -417,7 +434,7 @@ l43 -17 -4 23 c-258 1206 -288 1361 -288 1477 0 101 17 186 49 249 55 107 174
                             <span class="link-group-title"></span>
                             <button type="button" class="edit-button">
                               <svg
-                                xmlns="http://www.w4.org/2000/svg"
+                                xmlns="http://www.w3.org/2000/svg"
                                 height="1.5em"
                                 viewBox="0 96 960 960"
                                 width="1.5em"
