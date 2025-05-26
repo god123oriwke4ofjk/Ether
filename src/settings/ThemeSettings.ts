@@ -129,7 +129,7 @@ export default function (
 
   // HMR: Reapply theme, image, and update dropdown when this module or THEMES.ts changes
   if (import.meta.hot) {
-    import.meta.hot.accept(["../data/THEMES"], () => {
+    import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], () => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
       const selectedTheme = mode === "themes" ? themes[defaultThemeName] : wallbash;
       refreshTheme(selectedTheme.theme);
@@ -167,7 +167,7 @@ export default function (
         selectEl.value = mode === "themes" ? themeKey : "wallbash";
         selectEl.disabled = mode === "wallbash";
       }
-      console.log(`HMR: ThemeSettings updated to ${defaultThemeName}`);
+      console.log(`HMR: ThemeSettings updated to ${mode === "themes" ? defaultThemeName : "wallbash"}`);
     });
   }
 
