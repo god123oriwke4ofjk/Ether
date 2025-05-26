@@ -1,9 +1,10 @@
-const fs = require("fs").promises;
-const path = require("path");
+import { promises as fs } from "fs";
+import { resolve } from "path";
 
-module.exports = function wallbashHmrPlugin() {
+export default function wallbashHmrPlugin() {
   let lastUpdateTime = 0;
   const debounceDelay = 500;
+
   return {
     name: "vite-plugin-wallbash-hmr",
     handleHotUpdate({ file, server, timestamp }) {
@@ -13,26 +14,26 @@ module.exports = function wallbashHmrPlugin() {
         }
         lastUpdateTime = timestamp;
 
-        fs.readFile(file, "utf-8").then((content) => {
-          const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
-          const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
+        fs.readFile(file, "utf-8")
+          .then((content) => {
+            const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+            const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
 
-          fs.writeFile(file, newContent).then(() => {
-            console.log(`[wallbashHmrPlugin] Updated ${file} with HMR timestamp`);
-            server.moduleGraph.invalidateModule(
-              server.moduleGraph.getModuleById(file)
-            );
-            server.hot.send({
-              type: "full-reload",
-              path: file,
+            return fs.writeFile(file, newContent).then(() => {
+              console.log(`[wallbashHmrPlugin] Updated ${file} with HMR timestamp`);
+              server.moduleGraph.invalidateModule(
+                server.moduleGraph.getModuleById(file)
+              );
+              server.hot.send({
+                type: "full-reload",
+                path: file,
+              });
             });
-          }).catch((err) => {
+          })
+          .catch((err) => {
             console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
           });
-        }).catch((err) => {
-          console.error(`[wallbashHmrPlugin] Failed to read ${file}:`, err);
-        });
       }
     },
   };
-};
+}
