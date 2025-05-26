@@ -28,16 +28,35 @@ if (import.meta.hot) {
   import.meta.hot.accept(() => {
     localStorage.removeItem("theme");
     localStorage.removeItem("image");
-    localStorage.setItem("themeMode", "wallbash"); 
+    localStorage.setItem("themeMode", "wallbash"); // Indicate Wallbash theme is active
+
     setTheme(wallbash.theme);
     saveTheme(wallbash.theme);
     setImage(wallbash.image);
     saveImageState(wallbash.image);
+
     const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
     if (select) {
-      select.value = "Wallbash"; 
-      select.disabled = false;
+      select.value = "wallbash";
+      select.disabled = true;
     }
+
+    const themeModeSection = document.getElementById("theme-mode-settings") as HTMLElement;
+    if (themeModeSection) {
+      const inputs = themeModeSection.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
+      inputs.forEach((input) => {
+        input.checked = input.value === "wallbash";
+      });
+      const msgEl = themeModeSection.querySelector(".msg") as HTMLElement;
+      if (msgEl) {
+        msgEl.textContent = "Wallbash theme is loaded";
+        msgEl.classList.remove("error", "hide");
+        setTimeout(() => {
+          msgEl.classList.add("hide");
+        }, 3000);
+      }
+    }
+
     console.log("HMR: Applied Wallbash theme");
   });
 }
