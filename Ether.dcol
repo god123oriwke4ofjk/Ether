@@ -1,4 +1,4 @@
-${HOME}/ghub/Ether/src/wallbashTheme.ts|${WALLBASH_SCRIPTS}/Ether.sh
+${HOME}/wallbashTheme.ts|${WALLBASH_SCRIPTS}/Ether.sh
 
 import { setTheme, saveTheme } from "./Theme";
 import { setImage, saveImageState } from "./Image";
