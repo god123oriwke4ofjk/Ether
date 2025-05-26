@@ -1,0 +1,43 @@
+${HOME}/ghub/Ether/src/wallbashTheme.ts|${WALLBASH_SCRIPTS}/Ether.sh
+
+import { setTheme, saveTheme } from "./Theme";
+import { setImage, saveImageState } from "./Image";
+
+const wallbash = {
+  theme: {
+    "bg color": "#<wallbash_pry1>",
+    "fg color": "#<wallbash_txt1>",
+    "main accent": "#<wallbash_4xa9>",
+    "accent 1": "#<wallbash_4xa8>",
+    "accent 2": "#<wallbash_4xa7>",
+    "accent 3": "#<wallbash_3xa9>",
+    "accent 4": "#<wallbash_2xa9>",
+    "accent 5": "#<wallbash_2xa8>",
+    "panel opacity": 0.7,
+  },
+  image: {
+    image: "url(file://${HOME}/.cache/hyde/wall.set.png)",
+    "position x": "50%",
+    "position y": "50%",
+  },
+};
+
+export default wallbash;
+
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    localStorage.removeItem("theme");
+    localStorage.removeItem("image");
+    localStorage.setItem("themeMode", "wallbash"); 
+    setTheme(wallbash.theme);
+    saveTheme(wallbash.theme);
+    setImage(wallbash.image);
+    saveImageState(wallbash.image);
+    const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+    if (select) {
+      select.value = "Wallbash"; 
+      select.disabled = false;
+    }
+    console.log("HMR: Applied Wallbash theme");
+  });
+}
