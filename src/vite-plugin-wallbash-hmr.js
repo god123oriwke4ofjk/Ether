@@ -1,5 +1,4 @@
 import { promises as fs } from "fs";
-import { resolve } from "path";
 
 export default function wallbashHmrPlugin() {
   let lastUpdateTime = 0;
@@ -21,13 +20,16 @@ export default function wallbashHmrPlugin() {
 
             return fs.writeFile(file, newContent).then(() => {
               console.log(`[wallbashHmrPlugin] Updated ${file} with HMR timestamp`);
-              server.moduleGraph.invalidateModule(
-                server.moduleGraph.getModuleById(file)
-              );
-              server.hot.send({
-                type: "full-reload",
-                path: file,
-              });
+              const module = server.moduleGraph.getModuleById(file);
+              if (module) {
+                server.moduleGraph.invalidateModule(module);
+                server.ws.send({
+                  type: "full-reload",
+                  path: "/src/wallbashTheme.ts", 
+                });
+              } else {
+                console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
+              }
             });
           })
           .catch((err) => {
