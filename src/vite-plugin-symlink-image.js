@@ -4,22 +4,29 @@ import { resolve } from "path";
 export default function symlinkImagePlugin() {
   const realImagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
   let lastImageUpdateTime = 0;
-  const debounceDelay = 1500;
+  let lastSuccessfulLoad = 0; 
+  const baseDebounceDelay = 1000; 
+  const smallImageDebounceDelay = 500; 
   const maxRetries = 3;
-  const retryDelay = 500; 
+  const baseRetryDelay = 500;
+  const smallImageRetryDelay = 200; 
+  const smallImageThreshold = 1024 * 1024; 
 
   async function isFileReady(path, retries = 0) {
     try {
       const stats = await fs.stat(path);
+      const isSmallImage = stats.size < smallImageThreshold;
       const initialSize = stats.size;
       await new Promise((resolve) => setTimeout(resolve, 100));
       const newStats = await fs.stat(path);
       if (newStats.size === initialSize && initialSize > 0) {
-        return true;
+        return { ready: true, isSmallImage };
       }
       throw new Error("File size unstable");
     } catch (err) {
       if (retries < maxRetries) {
+        const isSmallImage = retries === 0 ? true : (await fs.stat(path).catch(() => ({ size: 0 }))).size < smallImageThreshold;
+        const retryDelay = isSmallImage ? smallImageRetryDelay : baseRetryDelay;
         console.log(`[symlinkImagePlugin] Retrying access to ${path} (${retries + 1}/${maxRetries})`);
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         return isFileReady(path, retries + 1);
@@ -31,14 +38,16 @@ export default function symlinkImagePlugin() {
   return {
     name: "vite-plugin-symlink-image",
     configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        if (req.url === "/wall.set.png" || req.url.startsWith("/wall.set.png?")) {
+      server.middlewares.use(async (ctx, res, next) => {
+        if (ctx.url === "/wall.set.png" || ctx.url.startsWith("/wall.set.png?")) {
           try {
-            await isFileReady(realImagePath);
+            const { ready, isSmallImage } = await isFileReady(realImagePath);
             const content = await fs.readFile(realImagePath);
             res.setHeader("Content-Type", "image/png");
             res.setHeader("Cache-Control", "no-cache");
             res.end(content);
+            lastSuccessfulLoad = Date.now(); // Mark successful load
+            console.log(`[symlinkImagePlugin] Served ${realImagePath} (${isSmallImage ? "small" : "large"} image)`);
           } catch (err) {
             console.error(`[symlinkImagePlugin] Failed to serve ${realImagePath}:`, err);
             res.statusCode = 404;
@@ -50,21 +59,35 @@ export default function symlinkImagePlugin() {
       });
 
       server.watcher.add(realImagePath);
-      server.watcher.on("change", (path) => {
+      server.watcher.on("change", async (path) => {
         if (path === realImagePath) {
           const now = Date.now();
+          if (now - lastSuccessfulLoad < 500) {
+            console.log(`[symlinkImagePlugin] Skipped change for ${path} (recently loaded successfully)`);
+            return;
+          }
+          let stats;
+          try {
+            stats = await fs.stat(path);
+          } catch {
+            return; 
+          }
+          const isSmallImage = stats.size < smallImageThreshold;
+          const debounceDelay = isSmallImage ? smallImageDebounceDelay : baseDebounceDelay;
+
           if (now - lastImageUpdateTime < debounceDelay) {
-            console.log(`[symlinkImagePlugin] Skipped change for ${realImagePath} (within debounce period)`);
+            console.log(`[symlinkImagePlugin] Skipped change for ${path} (within ${debounceDelay}ms debounce)`);
             return;
           }
           lastImageUpdateTime = now;
-          console.log(`[symlinkImagePlugin] Detected change in ${realImagePath}`);
+          console.log(`HMR: Detected change in ${path} (${isSmallImage ? "small" : "large"} image)`);
+          const hmrDelay = isSmallImage ? 500 : 1000;
           setTimeout(() => {
             server.ws.send({
               type: "full-reload",
               path: "/src/wallbashTheme.ts",
             });
-          }, 1000); 
+          }, hmrDelay);
         }
       });
     },
@@ -83,7 +106,7 @@ export default function symlinkImagePlugin() {
           },
         ];
       } catch (err) {
-        console.error(`[symlinkImagePlugin] Failed to access ${realImagePath} during build:`, err);
+        console.error(`[symlinkImagePlugin] Failed to access ${realImagePath}:`, err);
         return [];
       }
     },
