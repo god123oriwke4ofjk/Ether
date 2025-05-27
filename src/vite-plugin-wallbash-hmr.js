@@ -31,8 +31,12 @@ export default function wallbashHmrPlugin() {
         }
       });
 
-      server.httpServer?.once("listening", async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      server.ws.on("connection", async () => {
+        if (isProcessingUpdate) {
+          console.log(`[wallbashHmrPlugin] Skipped initial update (already processing)`);
+          return;
+        }
+        isProcessingUpdate = true;
 
         try {
           const currentHash = await getFileHash(file);
@@ -51,14 +55,9 @@ export default function wallbashHmrPlugin() {
               path: "/src/wallbashTheme.ts",
             });
             lastKnownContentHash = currentHash;
+            isProcessingUpdate = false;
             return;
           }
-
-          if (isProcessingUpdate) {
-            console.log(`[wallbashHmrPlugin] Skipped initial update (already processing)`);
-            return;
-          }
-          isProcessingUpdate = true;
 
           const content = await fs.readFile(file, "utf-8");
           const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
@@ -70,17 +69,11 @@ export default function wallbashHmrPlugin() {
           const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
           if (module) {
             server.moduleGraph.invalidateModule(module);
-            server.ws.send({
-              type: "full-reload",
-              path: "/src/wallbashTheme.ts",
-            });
-          } else {
-            console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
-            server.ws.send({
-              type: "full-reload",
-              path: "/src/wallbashTheme.ts",
-            });
           }
+          server.ws.send({
+            type: "full-reload",
+            path: "/src/wallbashTheme.ts",
+          });
           lastKnownContentHash = await getFileHash(file);
           isProcessingUpdate = false;
         } catch (err) {
