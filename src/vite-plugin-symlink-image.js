@@ -96,7 +96,7 @@ export default function symlinkImagePlugin() {
           setTimeout(() => {
             server.ws.send({
               type: "full-reload",
-              path: "/src/wallbashTheme.ts",
+              path: "/wall.set.png",
             });
             console.log(`[symlinkImagePlugin] Triggered HMR for /src/wallbashTheme.ts after ${hmrDelay}ms`);
           }, hmrDelay);
