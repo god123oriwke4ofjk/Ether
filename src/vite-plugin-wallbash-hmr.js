@@ -2,13 +2,12 @@ import { promises as fs } from "fs";
 
 export default function wallbashHmrPlugin() {
   let lastManualUpdateTime = 0;
-  const debounceDelay = 1000; 
+  const debounceDelay = 1500; 
   const editDelay = 500; 
-  let isProcessingUpdate = false; 
+  let isProcessingUpdate = false;
 
   return {
     name: "vite-plugin-wallbash-hmr",
-    // Run once when server starts
     configureServer(server) {
       setTimeout(() => {
         if (isProcessingUpdate) return;
