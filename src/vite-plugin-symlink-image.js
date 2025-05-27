@@ -5,9 +5,9 @@ export default function symlinkImagePlugin() {
   const realImagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
   let lastImageUpdateTime = 0;
   let lastSuccessfulLoad = 0;
-  let lastImageHash = null; 
-  const baseDebounceDelay = 1500; 
-  const smallImageDebounceDelay = 750; 
+  let lastImageHash = null;
+  const baseDebounceDelay = 1500;
+  const smallImageDebounceDelay = 750;
   const maxRetries = 3;
   const baseRetryDelay = 500;
   const smallImageRetryDelay = 200;
