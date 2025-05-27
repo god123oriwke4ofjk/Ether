@@ -17,9 +17,13 @@ export default function wallbashHmrPlugin() {
       const cleanedContent = content
         .replace(/\/\/ HMR timestamp: .*\n?/, "")
         .trim()
-        .replace(/\r\n/g, "\n");
-      return Buffer.from(cleanedContent).toString("base64");
-    } catch {
+        .replace(/\r\n/g, "\n")
+        .replace(/\n+$/, "");
+      const hash = Buffer.from(cleanedContent).toString("base64");
+      console.log(`[wallbashHmrPlugin] Computed hash for ${file}: ${hash.slice(0, 20)}...`);
+      return hash;
+    } catch (err) {
+      console.error(`[wallbashHmrPlugin] Failed to compute hash for ${file}:`, err);
       return null;
     }
   }
@@ -59,6 +63,7 @@ export default function wallbashHmrPlugin() {
       server.watcher.on("change", (path) => {
         if (path === resolve(process.env.HOME, ".cache/hyde/wall.set.png")) {
           lastImageUpdateTime = Date.now();
+          console.log(`[wallbashHmrPlugin] Detected image change at ${path}`);
         }
       });
 
@@ -70,13 +75,19 @@ export default function wallbashHmrPlugin() {
         isProcessingUpdate = true;
 
         try {
+          const initialHash = await getFileHash(file);
+          if (initialHash !== lastKnownContentHash) {
+            console.log(`[wallbashHmrPlugin] Hash mismatch on connection (initial: ${initialHash.slice(0, 20)}..., last: ${lastKnownContentHash?.slice(0, 20)}...)`);
+            lastKnownContentHash = initialHash;
+          }
+
           const currentHash = await getFileHash(file);
           if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
-            console.log(`[wallbashHmrPlugin] Detected external changes to ${file}`);
+            console.log(`[wallbashHmrPlugin] Detected external changes to ${file} (current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash.slice(0, 20)}...)`);
             await updateFileWithTimestamp(server, "external change");
           } else {
             console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
-            lastKnownContentHash = currentHash; // Update hash to ensure freshness
+            lastKnownContentHash = currentHash;
           }
         } catch (err) {
           console.error(`[wallbashHmrPlugin] Failed to check ${file}:`, err);
@@ -109,6 +120,7 @@ export default function wallbashHmrPlugin() {
             if (currentHash === lastKnownContentHash) {
               console.log(`[wallbashHmrPlugin] Skipped update for ${file} (no content change)`);
             } else {
+              console.log(`[wallbashHmrPlugin] Detected HMR change to ${file} (current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash?.slice(0, 20)}...)`);
               await updateFileWithTimestamp(server, "HMR update");
             }
           } catch (err) {
