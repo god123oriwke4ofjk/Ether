@@ -4,7 +4,29 @@ import { resolve } from "path";
 export default function symlinkImagePlugin() {
   const realImagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
   let lastImageUpdateTime = 0;
-  const debounceDelay = 1000; 
+  const debounceDelay = 1500;
+  const maxRetries = 3;
+  const retryDelay = 500; 
+
+  async function isFileReady(path, retries = 0) {
+    try {
+      const stats = await fs.stat(path);
+      const initialSize = stats.size;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const newStats = await fs.stat(path);
+      if (newStats.size === initialSize && initialSize > 0) {
+        return true;
+      }
+      throw new Error("File size unstable");
+    } catch (err) {
+      if (retries < maxRetries) {
+        console.log(`[symlinkImagePlugin] Retrying access to ${path} (${retries + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        return isFileReady(path, retries + 1);
+      }
+      throw err;
+    }
+  }
 
   return {
     name: "vite-plugin-symlink-image",
@@ -12,6 +34,7 @@ export default function symlinkImagePlugin() {
       server.middlewares.use(async (req, res, next) => {
         if (req.url === "/wall.set.png" || req.url.startsWith("/wall.set.png?")) {
           try {
+            await isFileReady(realImagePath);
             const content = await fs.readFile(realImagePath);
             res.setHeader("Content-Type", "image/png");
             res.setHeader("Cache-Control", "no-cache");
@@ -36,22 +59,25 @@ export default function symlinkImagePlugin() {
           }
           lastImageUpdateTime = now;
           console.log(`[symlinkImagePlugin] Detected change in ${realImagePath}`);
-          server.ws.send({
-            type: "full-reload",
-            path: "/src/wallbashTheme.ts",
-          });
+          setTimeout(() => {
+            server.ws.send({
+              type: "full-reload",
+              path: "/src/wallbashTheme.ts",
+            });
+          }, 1000); 
         }
       });
     },
     async transformIndexHtml() {
       try {
-        await fs.access(realImagePath);
+        await isFileReady(realImagePath);
         return [
           {
             tag: "link",
             attrs: {
-              rel: "prefetch",
+              rel: "preload",
               href: "/wall.set.png",
+              as: "image",
             },
             injectTo: "head",
           },
