@@ -3,6 +3,8 @@ import { resolve } from "path";
 
 export default function symlinkImagePlugin() {
   const realImagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
+  let lastImageUpdateTime = 0;
+  const debounceDelay = 1000; 
 
   return {
     name: "vite-plugin-symlink-image",
@@ -27,6 +29,12 @@ export default function symlinkImagePlugin() {
       server.watcher.add(realImagePath);
       server.watcher.on("change", (path) => {
         if (path === realImagePath) {
+          const now = Date.now();
+          if (now - lastImageUpdateTime < debounceDelay) {
+            console.log(`[symlinkImagePlugin] Skipped change for ${realImagePath} (within debounce period)`);
+            return;
+          }
+          lastImageUpdateTime = now;
           console.log(`[symlinkImagePlugin] Detected change in ${realImagePath}`);
           server.ws.send({
             type: "full-reload",
