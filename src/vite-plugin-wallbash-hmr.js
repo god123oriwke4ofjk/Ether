@@ -1,5 +1,5 @@
 import { promises as fs } from "fs";
-import { resolve } from "path";
+import { resolve, normalize } from "path";
 
 export default function wallbashHmrPlugin() {
   let lastManualUpdateTime = 0;
@@ -7,7 +7,9 @@ export default function wallbashHmrPlugin() {
   const debounceDelay = 1500;
   const editDelay = 500;
   let isProcessingUpdate = false;
-  let lastKnownContentHash = null; 
+  let lastKnownContentHash = null;
+
+  const file = normalize(resolve(process.cwd(), "src/wallbashTheme.ts"));
 
   async function getFileHash(file) {
     try {
@@ -21,6 +23,8 @@ export default function wallbashHmrPlugin() {
   return {
     name: "vite-plugin-wallbash-hmr",
     configureServer(server) {
+      server.watcher.add(file);
+
       server.watcher.on("change", (path) => {
         if (path === resolve(process.env.HOME, ".cache/hyde/wall.set.png")) {
           lastImageUpdateTime = Date.now();
@@ -28,15 +32,19 @@ export default function wallbashHmrPlugin() {
       });
 
       server.httpServer?.once("listening", async () => {
-        const file = "src/wallbashTheme.ts";
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         try {
           const currentHash = await getFileHash(file);
           if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
             console.log(`[wallbashHmrPlugin] Detected external changes to ${file}`);
-            const module = server.moduleGraph.getModuleById(file);
+            const moduleId = normalize(file);
+            const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
             if (module) {
               server.moduleGraph.invalidateModule(module);
               console.log(`[wallbashHmrPlugin] Cleared module cache for ${file}`);
+            } else {
+              console.warn(`[wallbashHmrPlugin] Module not found, forcing reload for ${file}`);
             }
             server.ws.send({
               type: "full-reload",
@@ -46,46 +54,43 @@ export default function wallbashHmrPlugin() {
             return;
           }
 
-          setTimeout(() => {
-            if (isProcessingUpdate) {
-              console.log(`[wallbashHmrPlugin] Skipped initial update (already processing)`);
-              return;
-            }
-            isProcessingUpdate = true;
+          if (isProcessingUpdate) {
+            console.log(`[wallbashHmrPlugin] Skipped initial update (already processing)`);
+            return;
+          }
+          isProcessingUpdate = true;
 
-            fs.readFile(file, "utf-8")
-              .then((content) => {
-                const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
-                const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
+          const content = await fs.readFile(file, "utf-8");
+          const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+          const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
 
-                return fs.writeFile(file, newContent).then(async () => {
-                  console.log(`[wallbashHmrPlugin] Initial update to ${file} after ${editDelay}ms delay`);
-                  const module = server.moduleGraph.getModuleById(file);
-                  if (module) {
-                    server.moduleGraph.invalidateModule(module);
-                    server.ws.send({
-                      type: "full-reload",
-                      path: "/src/wallbashTheme.ts",
-                    });
-                  } else {
-                    console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
-                  }
-                  lastKnownContentHash = await getFileHash(file);
-                  isProcessingUpdate = false;
-                });
-              })
-              .catch((err) => {
-                console.error(`[wallbashHmrPlugin] Failed to initial update ${file}:`, err);
-                isProcessingUpdate = false;
-              });
-          }, editDelay);
+          await fs.writeFile(file, newContent);
+          console.log(`[wallbashHmrPlugin] Initial update to ${file} after ${editDelay}ms delay`);
+          const moduleId = normalize(file);
+          const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
+          if (module) {
+            server.moduleGraph.invalidateModule(module);
+            server.ws.send({
+              type: "full-reload",
+              path: "/src/wallbashTheme.ts",
+            });
+          } else {
+            console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
+            server.ws.send({
+              type: "full-reload",
+              path: "/src/wallbashTheme.ts",
+            });
+          }
+          lastKnownContentHash = await getFileHash(file);
+          isProcessingUpdate = false;
         } catch (err) {
-          console.error(`[wallbashHmrPlugin] Failed to check ${file} for external changes:`, err);
+          console.error(`[wallbashHmrPlugin] Failed to process ${file}:`, err);
+          isProcessingUpdate = false;
         }
       });
     },
-    handleHotUpdate({ file, server, timestamp }) {
-      if (file.endsWith("wallbashTheme.ts")) {
+    handleHotUpdate({ file: updatedFile, server, timestamp }) {
+      if (normalize(updatedFile) === file) {
         if (isProcessingUpdate) {
           console.log(`[wallbashHmrPlugin] Skipped update for ${file} (already processing)`);
           return;
@@ -110,16 +115,15 @@ export default function wallbashHmrPlugin() {
 
             await fs.writeFile(file, newContent);
             console.log(`[wallbashHmrPlugin] Updated ${file} with HMR timestamp after ${editDelay}ms delay`);
-            const module = server.moduleGraph.getModuleById(file);
+            const moduleId = normalize(file);
+            const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
             if (module) {
               server.moduleGraph.invalidateModule(module);
-              server.ws.send({
-                type: "full-reload",
-                path: "/src/wallbashTheme.ts",
-              });
-            } else {
-              console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
             }
+            server.ws.send({
+              type: "full-reload",
+              path: "/src/wallbashTheme.ts",
+            });
             lastKnownContentHash = await getFileHash(file);
             isProcessingUpdate = false;
           } catch (err) {
