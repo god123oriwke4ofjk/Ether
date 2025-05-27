@@ -2,13 +2,20 @@ import { promises as fs } from "fs";
 
 export default function wallbashHmrPlugin() {
   let lastManualUpdateTime = 0;
-  const debounceDelay = 1500; 
-  const editDelay = 500; 
+  let lastImageUpdateTime = 0; 
+  const debounceDelay = 1500;
+  const editDelay = 500;
   let isProcessingUpdate = false;
 
   return {
     name: "vite-plugin-wallbash-hmr",
     configureServer(server) {
+      server.watcher.on("change", (path) => {
+        if (path === resolve(process.env.HOME, ".cache/hyde/wall.set.png")) {
+          lastImageUpdateTime = Date.now();
+        }
+      });
+
       setTimeout(() => {
         if (isProcessingUpdate) return;
         isProcessingUpdate = true;
@@ -47,7 +54,12 @@ export default function wallbashHmrPlugin() {
           return;
         }
         if (timestamp - lastManualUpdateTime < debounceDelay) {
-          console.log(`[wallbashHmrPlugin] Skipped update for ${file} (within debounce period)`);
+          console.log(`[wallbashHmrPlugin] Skipped update for ${file} (within ${debounceDelay}ms debounce)`);
+          return;
+        }
+        // Check if an image update is recent
+        if (timestamp - lastImageUpdateTime < 1000) {
+          console.log(`[wallbashHmrPlugin] Skipped update for ${file} (recent image update)`);
           return;
         }
 
