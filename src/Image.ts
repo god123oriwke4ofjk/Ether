@@ -22,6 +22,7 @@ const ImageStateSchema = z.object({
 
 const imageEl = document.querySelector(".image") as HTMLElement;
 const defaultImage = `url(${import.meta.env.BASE_URL}main-image.jpg)`;
+let currentImageSrc = null; // Track current image to skip duplicates
 
 export function getImage(): ImageState {
   const lsItem = localStorage.getItem(IMAGE_LS_KEY);
@@ -35,19 +36,27 @@ export function getImage(): ImageState {
 }
 
 export function setImage(imageState: ImageState) {
-  const img = new Image();
   const src = imageState.image?.match(/url\((.*?)\)/)?.[1] || defaultImage;
+  if (src === currentImageSrc) {
+    console.log(`[Image] Skipped setting image (already loaded: ${src})`);
+    return;
+  }
+
+  const img = new Image();
   img.src = src;
   img.onload = () => {
     imageEl.style.setProperty("background-image", imageState.image || defaultImage);
     imageEl.style.setProperty("background-position-x", imageState["position x"]);
     imageEl.style.setProperty("background-position-y", imageState["position y"]);
+    currentImageSrc = src;
+    console.log(`[Image] Loaded image: ${src}`);
   };
   img.onerror = () => {
     console.warn(`[Image] Failed to load ${src}, using default image`);
     imageEl.style.setProperty("background-image", defaultImage);
     imageEl.style.setProperty("background-position-x", imageState["position x"]);
     imageEl.style.setProperty("background-position-y", imageState["position y"]);
+    currentImageSrc = defaultImage;
   };
 }
 
