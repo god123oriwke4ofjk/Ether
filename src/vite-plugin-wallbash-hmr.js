@@ -8,6 +8,7 @@ export default function wallbashHmrPlugin() {
   const editDelay = 500;
   let isProcessingUpdate = false;
   let lastKnownContentHash = null;
+  let isFirstConnection = true;
 
   const file = normalize(resolve(process.cwd(), "src/wallbashTheme.ts"));
 
@@ -60,6 +61,8 @@ export default function wallbashHmrPlugin() {
       lastKnownContentHash = await getFileHash(file);
       console.log(`[wallbashHmrPlugin] Initialized hash for ${file}`);
 
+      isFirstConnection = true;
+
       server.watcher.on("change", (path) => {
         if (path === resolve(process.env.HOME, ".cache/hyde/wall.set.png")) {
           lastImageUpdateTime = Date.now();
@@ -75,19 +78,19 @@ export default function wallbashHmrPlugin() {
         isProcessingUpdate = true;
 
         try {
-          const initialHash = await getFileHash(file);
-          if (initialHash !== lastKnownContentHash) {
-            console.log(`[wallbashHmrPlugin] Hash mismatch on connection (initial: ${initialHash.slice(0, 20)}..., last: ${lastKnownContentHash?.slice(0, 20)}...)`);
-            lastKnownContentHash = initialHash;
-          }
-
-          const currentHash = await getFileHash(file);
-          if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
-            console.log(`[wallbashHmrPlugin] Detected external changes to ${file} (current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash.slice(0, 20)}...)`);
-            await updateFileWithTimestamp(server, "external change");
+          if (isFirstConnection) {
+            console.log(`[wallbashHmrPlugin] First connection after server start, forcing refresh for ${file}`);
+            await updateFileWithTimestamp(server, "first connection");
+            isFirstConnection = false;
           } else {
-            console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
-            lastKnownContentHash = currentHash;
+            const currentHash = await getFileHash(file);
+            if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
+              console.log(`[wallbashHmrPlugin] Detected external changes to ${file} (current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash.slice(0, 20)}...)`);
+              await updateFileWithTimestamp(server, "external change");
+            } else {
+              console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
+              lastKnownContentHash = currentHash;
+            }
           }
         } catch (err) {
           console.error(`[wallbashHmrPlugin] Failed to check ${file}:`, err);
