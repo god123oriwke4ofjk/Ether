@@ -24,7 +24,7 @@ export default function wallbashHmrPlugin() {
     }
   }
 
-  async function updateFileWithTimestamp(server) {
+  async function updateFileWithTimestamp(server, reason) {
     try {
       const content = await fs.readFile(file, "utf-8");
       const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
@@ -42,7 +42,7 @@ export default function wallbashHmrPlugin() {
         path: "/src/wallbashTheme.ts",
       });
       lastKnownContentHash = await getFileHash(file);
-      console.log(`[wallbashHmrPlugin] Updated ${file} with timestamp`);
+      console.log(`[wallbashHmrPlugin] Updated ${file} with timestamp (${reason})`);
     } catch (err) {
       console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
     }
@@ -64,7 +64,7 @@ export default function wallbashHmrPlugin() {
 
       server.ws.on("connection", async () => {
         if (isProcessingUpdate) {
-          console.log(`[wallbashHmrPlugin] Skipped initial update (already processing)`);
+          console.log(`[wallbashHmrPlugin] Skipped initial check (already processing)`);
           return;
         }
         isProcessingUpdate = true;
@@ -73,13 +73,13 @@ export default function wallbashHmrPlugin() {
           const currentHash = await getFileHash(file);
           if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
             console.log(`[wallbashHmrPlugin] Detected external changes to ${file}`);
-            await updateFileWithTimestamp(server);
+            await updateFileWithTimestamp(server, "external change");
           } else {
             console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
-            await updateFileWithTimestamp(server);
+            lastKnownContentHash = currentHash; // Update hash to ensure freshness
           }
         } catch (err) {
-          console.error(`[wallbashHmrPlugin] Failed to process ${file}:`, err);
+          console.error(`[wallbashHmrPlugin] Failed to check ${file}:`, err);
         } finally {
           isProcessingUpdate = false;
         }
@@ -109,7 +109,7 @@ export default function wallbashHmrPlugin() {
             if (currentHash === lastKnownContentHash) {
               console.log(`[wallbashHmrPlugin] Skipped update for ${file} (no content change)`);
             } else {
-              await updateFileWithTimestamp(server);
+              await updateFileWithTimestamp(server, "HMR update");
             }
           } catch (err) {
             console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
