@@ -22,6 +22,7 @@ const wallbash = {
 
 export default wallbash;
 
+
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
     const currentMode = localStorage.getItem("themeMode") || "themes";
@@ -30,10 +31,6 @@ if (import.meta.hot) {
       return;
     }
 
-    localStorage.removeItem("theme");
-    localStorage.removeItem("image");
-    localStorage.setItem("themeMode", "wallbash");
-
     setTheme(wallbash.theme);
     saveTheme(wallbash.theme);
     setImage(wallbash.image);
@@ -41,7 +38,7 @@ if (import.meta.hot) {
 
     const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
     if (select) {
-      select.value = "wallbash";
+      select.value = "custom"; 
       select.disabled = true;
     }
 
