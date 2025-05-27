@@ -4,13 +4,23 @@ import { resolve } from "path";
 export default function symlinkImagePlugin() {
   const realImagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
   let lastImageUpdateTime = 0;
-  let lastSuccessfulLoad = 0; 
-  const baseDebounceDelay = 1000; 
-  const smallImageDebounceDelay = 500; 
+  let lastSuccessfulLoad = 0;
+  let lastImageHash = null; 
+  const baseDebounceDelay = 1500; 
+  const smallImageDebounceDelay = 750; 
   const maxRetries = 3;
   const baseRetryDelay = 500;
-  const smallImageRetryDelay = 200; 
-  const smallImageThreshold = 1024 * 1024; 
+  const smallImageRetryDelay = 200;
+  const smallImageThreshold = 1024 * 1024;
+
+  async function getFileHash(path) {
+    try {
+      const content = await fs.readFile(path);
+      return content.length + ":" + content.slice(0, 100).toString("base64");
+    } catch {
+      return null;
+    }
+  }
 
   async function isFileReady(path, retries = 0) {
     try {
@@ -46,7 +56,7 @@ export default function symlinkImagePlugin() {
             res.setHeader("Content-Type", "image/png");
             res.setHeader("Cache-Control", "no-cache");
             res.end(content);
-            lastSuccessfulLoad = Date.now(); // Mark successful load
+            lastSuccessfulLoad = Date.now();
             console.log(`[symlinkImagePlugin] Served ${realImagePath} (${isSmallImage ? "small" : "large"} image)`);
           } catch (err) {
             console.error(`[symlinkImagePlugin] Failed to serve ${realImagePath}:`, err);
@@ -62,16 +72,16 @@ export default function symlinkImagePlugin() {
       server.watcher.on("change", async (path) => {
         if (path === realImagePath) {
           const now = Date.now();
+          const currentHash = await getFileHash(path);
+          if (currentHash === lastImageHash) {
+            console.log(`[symlinkImagePlugin] Skipped change for ${path} (identical content)`);
+            return;
+          }
           if (now - lastSuccessfulLoad < 500) {
             console.log(`[symlinkImagePlugin] Skipped change for ${path} (recently loaded successfully)`);
             return;
           }
-          let stats;
-          try {
-            stats = await fs.stat(path);
-          } catch {
-            return; 
-          }
+          const stats = await fs.stat(path).catch(() => ({ size: 0 }));
           const isSmallImage = stats.size < smallImageThreshold;
           const debounceDelay = isSmallImage ? smallImageDebounceDelay : baseDebounceDelay;
 
@@ -80,13 +90,15 @@ export default function symlinkImagePlugin() {
             return;
           }
           lastImageUpdateTime = now;
-          console.log(`HMR: Detected change in ${path} (${isSmallImage ? "small" : "large"} image)`);
+          lastImageHash = currentHash;
+          console.log(`[symlinkImagePlugin] Detected change in ${path} (${isSmallImage ? "small" : "large"} image)`);
           const hmrDelay = isSmallImage ? 500 : 1000;
           setTimeout(() => {
             server.ws.send({
               type: "full-reload",
               path: "/src/wallbashTheme.ts",
             });
+            console.log(`[symlinkImagePlugin] Triggered HMR for /src/wallbashTheme.ts after ${hmrDelay}ms`);
           }, hmrDelay);
         }
       });
