@@ -1,6 +1,5 @@
 import { StringKeyObj } from "../../types/interfaces";
 import { themes, defaultThemeName } from "../data/THEMES";
-import wallbash from "../wallbashTheme";
 import DomRender from "../DomRender";
 import { getImage, ImageState, refreshImage, saveImageState } from "../Image";
 import {
@@ -16,7 +15,6 @@ import SettingsSection, {
   SettingsSectionWithChildren
 } from "./SettingsSection";
 
-// Define theme keys type
 type ThemeKey = keyof typeof themes;
 
 export default function (
@@ -38,11 +36,7 @@ export default function (
             text: "Custom",
             value: "custom"
           });
-          const wallbashOption = DomRender.option({
-            text: "Wallbash",
-            value: "wallbash"
-          });
-          selectEl.append(customOption, wallbashOption);
+          selectEl.append(customOption);
 
           for (const key of Object.keys(themes)) {
             const optionEl = DomRender.option({
@@ -52,16 +46,13 @@ export default function (
             selectEl.append(optionEl);
           }
           const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-          selectEl.value = mode === "themes" ? defaultThemeName : "wallbash";
+          selectEl.value = mode === "themes" ? defaultThemeName : "custom";
           selectEl.disabled = mode === "wallbash";
 
           selectEl.addEventListener("change", () => {
-            const value = selectEl.value as ThemeKey | "custom" | "wallbash";
+            const value = selectEl.value as ThemeKey | "custom";
             let selectedTheme;
-            if (value === "wallbash") {
-              selectedTheme = wallbash;
-              localStorage.setItem(THEME_MODE_LS_KEY, "wallbash");
-            } else if (value === "custom") {
+            if (value === "custom") {
               selectedTheme = {
                 theme: getTheme(),
                 image: getImage()
@@ -90,8 +81,8 @@ export default function (
           const currentTheme = getTheme();
           const themeKey = Object.keys(themes).find(
             (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
-          ) || (mode === "wallbash" ? "wallbash" : "custom");
-          selectEl.value = mode === "themes" ? themeKey : "wallbash";
+          ) || "custom";
+          selectEl.value = mode === "themes" ? themeKey : "custom";
           selectEl.disabled = mode === "wallbash";
         }
       },
@@ -127,11 +118,10 @@ export default function (
     }
   });
 
-  // HMR: Reapply theme, image, and update dropdown when this module or THEMES.ts changes
   if (import.meta.hot) {
-    import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], () => {
+    import.meta.hot.accept(["../data/THEMES"], () => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-      const selectedTheme = mode === "themes" ? themes[defaultThemeName] : wallbash;
+      const selectedTheme = mode === "themes" ? themes[defaultThemeName] : themes[defaultThemeName];
       refreshTheme(selectedTheme.theme);
       refreshImage(selectedTheme.image);
       themeSection.state = selectedTheme.theme;
@@ -148,11 +138,7 @@ export default function (
           text: "Custom",
           value: "custom"
         });
-        const wallbashOption = DomRender.option({
-          text: "Wallbash",
-          value: "wallbash"
-        });
-        selectEl.append(customOption, wallbashOption);
+        selectEl.append(customOption);
         for (const key of Object.keys(themes)) {
           const optionEl = DomRender.option({
             text: key,
@@ -163,11 +149,11 @@ export default function (
         const currentTheme = getTheme();
         const themeKey = Object.keys(themes).find(
           (key) => JSON.stringify(themes[key as ThemeKey].theme) === JSON.stringify(currentTheme)
-        ) || (mode === "wallbash" ? "wallbash" : "custom");
-        selectEl.value = mode === "themes" ? themeKey : "wallbash";
+        ) || "custom";
+        selectEl.value = mode === "themes" ? themeKey : "custom";
         selectEl.disabled = mode === "wallbash";
       }
-      console.log(`HMR: ThemeSettings updated to ${mode === "themes" ? defaultThemeName : "wallbash"}`);
+      console.log(`HMR: ThemeSettings updated to ${mode === "themes" ? defaultThemeName : "custom"}`);
     });
   }
 
