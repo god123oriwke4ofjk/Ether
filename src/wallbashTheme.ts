@@ -22,12 +22,12 @@ const wallbash = {
 
 export default wallbash;
 
-
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
     const currentMode = localStorage.getItem("themeMode") || "themes";
     if (currentMode !== "wallbash") {
       console.log("HMR: Skipped Wallbash theme update (not in wallbash mode)");
+      import.meta.hot.invalidate();
       return;
     }
 
@@ -38,7 +38,7 @@ if (import.meta.hot) {
 
     const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
     if (select) {
-      select.value = "custom"; 
+      select.value = "custom";
       select.disabled = true;
     }
 
