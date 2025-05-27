@@ -22,7 +22,7 @@ const ImageStateSchema = z.object({
 
 const imageEl = document.querySelector(".image") as HTMLElement;
 const defaultImage = `url(${import.meta.env.BASE_URL}main-image.jpg)`;
-let currentImageSrc = null; // Track current image to skip duplicates
+let currentImageSrc = null;
 
 export function getImage(): ImageState {
   const lsItem = localStorage.getItem(IMAGE_LS_KEY);
