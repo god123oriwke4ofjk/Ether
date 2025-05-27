@@ -19,13 +19,11 @@ export default function initThemeModeSettings() {
         refreshTheme(theme);
         saveImageState(image);
         refreshImage(image);
-        // Update theme dropdown
         const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
         if (select) {
-          select.value = data === "themes" ? defaultThemeName : "wallbash";
+          select.value = data === "themes" ? defaultThemeName : "custom";
           select.disabled = data === "wallbash";
         }
-        // Display specific success message
         const message = data === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
         const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
         if (msgEl) {
@@ -42,7 +40,6 @@ export default function initThemeModeSettings() {
     },
     render: function () {
       const sectionEl = this.sectionEl;
-      // Clear existing content
       sectionEl.innerHTML = `
         <h3 class="settings-title">Theme Mode</h3>
         <div class="input-group">
@@ -62,12 +59,10 @@ export default function initThemeModeSettings() {
         <p class="msg"></p>
       `;
 
-      // Attach event listeners
       const inputs = sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
         input.addEventListener("change", (e) => {
           this.state = (e.target as HTMLInputElement).value;
-          // Show immediate feedback on change
           const message = this.state === "wallbash" ? "Wallbash theme selected" : "Default theme selected";
           const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
           if (msgEl) {
@@ -105,7 +100,6 @@ export default function initThemeModeSettings() {
       inputs.forEach((input) => {
         input.checked = input.value === this.state;
       });
-      // Ensure message reflects current state
       const message = this.state === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
       const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
       if (msgEl) {
@@ -118,18 +112,22 @@ export default function initThemeModeSettings() {
     }
   });
 
-  // HMR: Reapply mode, theme, and image
   if (import.meta.hot) {
     import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], () => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
       const { theme, image } = mode === "themes" ? themes[defaultThemeName] : wallbash;
-      refreshTheme(theme);
-      refreshImage(image);
+      if (mode === "themes") {
+        refreshTheme(themes[defaultThemeName].theme);
+        refreshImage(themes[defaultThemeName].image);
+      } else {
+        refreshTheme(theme);
+        refreshImage(image);
+      }
       themeModeSection.state = mode;
       themeModeSection.rerender();
       const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
       if (select) {
-        select.value = mode === "themes" ? defaultThemeName : "wallbash";
+        select.value = mode === "themes" ? defaultThemeName : "custom";
         select.disabled = mode === "wallbash";
       }
       console.log(`HMR: ThemeModeSettings updated to ${mode === "themes" ? defaultThemeName : "wallbash"}`);
