@@ -4,7 +4,8 @@ import { resolve, normalize } from "path";
 export default function wallbashHmrPlugin() {
   let lastManualUpdateTime = 0;
   let lastImageUpdateTime = 0;
-  const debounceDelay = 2000; 
+  const debounceDelay = 2000;
+  const editDelay = 500;
   let isProcessingUpdate = false;
   let lastKnownContentHash = null;
 
@@ -13,7 +14,8 @@ export default function wallbashHmrPlugin() {
   async function getFileHash(file) {
     try {
       const content = await fs.readFile(file, "utf-8");
-      return content.length + ":" + Buffer.from(content).toString("base64").slice(0, 100);
+      const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+      return Buffer.from(cleanedContent).toString("base64").slice(0, 100);
     } catch {
       return null;
     }
@@ -21,17 +23,18 @@ export default function wallbashHmrPlugin() {
 
   return {
     name: "vite-plugin-wallbash-hmr",
-    configureServer(server) {
+    async configureServer(server) {
       server.watcher.add(file);
 
-      // Listen for image updates
+      lastKnownContentHash = await getFileHash(file);
+      console.log(`[wallbashHmrPlugin] Initialized hash for ${file}`);
+
       server.watcher.on("change", (path) => {
         if (path === resolve(process.env.HOME, ".cache/hyde/wall.set.png")) {
           lastImageUpdateTime = Date.now();
         }
       });
 
-      // Initial update on first browser connection
       server.ws.on("connection", async () => {
         if (isProcessingUpdate) {
           console.log(`[wallbashHmrPlugin] Skipped initial update (already processing)`);
@@ -51,14 +54,17 @@ export default function wallbashHmrPlugin() {
             } else {
               console.warn(`[wallbashHmrPlugin] Module not found, forcing reload for ${file}`);
             }
+            const content = await fs.readFile(file, "utf-8");
+            const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+            const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
+            await fs.writeFile(file, newContent);
             server.ws.send({
               type: "full-reload",
               path: "/src/wallbashTheme.ts",
             });
-            lastKnownContentHash = currentHash;
+            lastKnownContentHash = await getFileHash(file);
           } else {
             console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
-            lastKnownContentHash = currentHash;
           }
         } catch (err) {
           console.error(`[wallbashHmrPlugin] Failed to process ${file}:`, err);
@@ -94,7 +100,12 @@ export default function wallbashHmrPlugin() {
               return;
             }
 
-            console.log(`[wallbashHmrPlugin] Detected change in ${file}`);
+            console.log(`[wallbashHmrPlugin] Updating ${file} to fix HMR lag`);
+            const content = await fs.readFile(file, "utf-8");
+            const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+            const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
+            await fs.writeFile(file, newContent);
+
             const moduleId = normalize(file);
             const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
             if (module) {
@@ -104,13 +115,13 @@ export default function wallbashHmrPlugin() {
               type: "full-reload",
               path: "/src/wallbashTheme.ts",
             });
-            lastKnownContentHash = currentHash;
+            lastKnownContentHash = await getFileHash(file);
           } catch (err) {
             console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
           } finally {
             isProcessingUpdate = false;
           }
-        }, 500);
+        }, editDelay);
       }
     },
   };
