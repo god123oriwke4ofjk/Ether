@@ -14,10 +14,37 @@ export default function wallbashHmrPlugin() {
   async function getFileHash(file) {
     try {
       const content = await fs.readFile(file, "utf-8");
-      const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
-      return Buffer.from(cleanedContent).toString("base64").slice(0, 100);
+      const cleanedContent = content
+        .replace(/\/\/ HMR timestamp: .*\n?/, "")
+        .trim()
+        .replace(/\r\n/g, "\n");
+      return Buffer.from(cleanedContent).toString("base64");
     } catch {
       return null;
+    }
+  }
+
+  async function updateFileWithTimestamp(server) {
+    try {
+      const content = await fs.readFile(file, "utf-8");
+      const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+      const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
+      await fs.writeFile(file, newContent);
+
+      const moduleId = normalize(file);
+      const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
+      if (module) {
+        server.moduleGraph.invalidateModule(module);
+        console.log(`[wallbashHmrPlugin] Cleared module cache for ${file}`);
+      }
+      server.ws.send({
+        type: "full-reload",
+        path: "/src/wallbashTheme.ts",
+      });
+      lastKnownContentHash = await getFileHash(file);
+      console.log(`[wallbashHmrPlugin] Updated ${file} with timestamp`);
+    } catch (err) {
+      console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
     }
   }
 
@@ -46,25 +73,10 @@ export default function wallbashHmrPlugin() {
           const currentHash = await getFileHash(file);
           if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
             console.log(`[wallbashHmrPlugin] Detected external changes to ${file}`);
-            const moduleId = normalize(file);
-            const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
-            if (module) {
-              server.moduleGraph.invalidateModule(module);
-              console.log(`[wallbashHmrPlugin] Cleared module cache for ${file}`);
-            } else {
-              console.warn(`[wallbashHmrPlugin] Module not found, forcing reload for ${file}`);
-            }
-            const content = await fs.readFile(file, "utf-8");
-            const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
-            const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
-            await fs.writeFile(file, newContent);
-            server.ws.send({
-              type: "full-reload",
-              path: "/src/wallbashTheme.ts",
-            });
-            lastKnownContentHash = await getFileHash(file);
+            await updateFileWithTimestamp(server);
           } else {
             console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
+            await updateFileWithTimestamp(server);
           }
         } catch (err) {
           console.error(`[wallbashHmrPlugin] Failed to process ${file}:`, err);
@@ -96,26 +108,9 @@ export default function wallbashHmrPlugin() {
             const currentHash = await getFileHash(file);
             if (currentHash === lastKnownContentHash) {
               console.log(`[wallbashHmrPlugin] Skipped update for ${file} (no content change)`);
-              isProcessingUpdate = false;
-              return;
+            } else {
+              await updateFileWithTimestamp(server);
             }
-
-            console.log(`[wallbashHmrPlugin] Updating ${file} to fix HMR lag`);
-            const content = await fs.readFile(file, "utf-8");
-            const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
-            const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
-            await fs.writeFile(file, newContent);
-
-            const moduleId = normalize(file);
-            const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
-            if (module) {
-              server.moduleGraph.invalidateModule(module);
-            }
-            server.ws.send({
-              type: "full-reload",
-              path: "/src/wallbashTheme.ts",
-            });
-            lastKnownContentHash = await getFileHash(file);
           } catch (err) {
             console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
           } finally {
