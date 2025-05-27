@@ -17,10 +17,12 @@ const percentage = z.custom<`${number}%`>((val) => {
 const ImageStateSchema = z.object({
   image: z.string(),
   "position x": percentage,
-  "position y": percentage
+  "position y": percentage,
 });
 
 const imageEl = document.querySelector(".image") as HTMLElement;
+const defaultImage = `url(${import.meta.env.BASE_URL}main-image.jpg)`;
+
 export function getImage(): ImageState {
   const lsItem = localStorage.getItem(IMAGE_LS_KEY);
   if (lsItem) return JSON.parse(lsItem);
@@ -33,9 +35,20 @@ export function getImage(): ImageState {
 }
 
 export function setImage(imageState: ImageState) {
-  imageEl.style.setProperty("background-image", imageState.image);
-  imageEl.style.setProperty("background-position-x", imageState["position x"]);
-  imageEl.style.setProperty("background-position-y", imageState["position y"]);
+  const img = new Image();
+  const src = imageState.image?.match(/url\((.*?)\)/)?.[1] || defaultImage;
+  img.src = src;
+  img.onload = () => {
+    imageEl.style.setProperty("background-image", imageState.image || defaultImage);
+    imageEl.style.setProperty("background-position-x", imageState["position x"]);
+    imageEl.style.setProperty("background-position-y", imageState["position y"]);
+  };
+  img.onerror = () => {
+    console.warn(`[Image] Failed to load ${src}, using default image`);
+    imageEl.style.setProperty("background-image", defaultImage);
+    imageEl.style.setProperty("background-position-x", imageState["position x"]);
+    imageEl.style.setProperty("background-position-y", imageState["position y"]);
+  };
 }
 
 export function refreshImage(image: ImageState) {
@@ -52,7 +65,6 @@ export function saveImageState(data: any) {
   localStorage.setItem(IMAGE_LS_KEY, JSON.stringify(data));
 }
 
-// HMR: Reapply image when this module or THEMES.ts changes
 if (import.meta.hot) {
   import.meta.hot.accept(["./data/THEMES"], () => {
     const image = getImage();
