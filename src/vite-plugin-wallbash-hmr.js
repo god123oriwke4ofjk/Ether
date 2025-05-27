@@ -8,6 +8,7 @@ export default function wallbashHmrPlugin() {
   const editDelay = 500;
   let isProcessingUpdate = false;
   let lastKnownContentHash = null;
+  let lastKnownMtime = null; 
   let isFirstConnection = true;
 
   const file = normalize(resolve(process.cwd(), "src/wallbashTheme.ts"));
@@ -25,6 +26,18 @@ export default function wallbashHmrPlugin() {
       return hash;
     } catch (err) {
       console.error(`[wallbashHmrPlugin] Failed to compute hash for ${file}:`, err);
+      return null;
+    }
+  }
+
+  async function getFileMtime(file) {
+    try {
+      const stats = await fs.stat(file);
+      const mtime = stats.mtimeMs;
+      console.log(`[wallbashHmrPlugin] File mtime for ${file}: ${mtime}`);
+      return mtime;
+    } catch (err) {
+      console.error(`[wallbashHmrPlugin] Failed to get mtime for ${file}:`, err);
       return null;
     }
   }
@@ -47,6 +60,7 @@ export default function wallbashHmrPlugin() {
         path: "/src/wallbashTheme.ts",
       });
       lastKnownContentHash = await getFileHash(file);
+      lastKnownMtime = await getFileMtime(file);
       console.log(`[wallbashHmrPlugin] Updated ${file} with timestamp (${reason})`);
     } catch (err) {
       console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
@@ -59,7 +73,8 @@ export default function wallbashHmrPlugin() {
       server.watcher.add(file);
 
       lastKnownContentHash = await getFileHash(file);
-      console.log(`[wallbashHmrPlugin] Initialized hash for ${file}`);
+      lastKnownMtime = await getFileMtime(file);
+      console.log(`[wallbashHmrPlugin] Initialized hash and mtime for ${file}`);
 
       isFirstConnection = true;
 
@@ -84,12 +99,21 @@ export default function wallbashHmrPlugin() {
             isFirstConnection = false;
           } else {
             const currentHash = await getFileHash(file);
-            if (lastKnownContentHash && currentHash !== lastKnownContentHash) {
-              console.log(`[wallbashHmrPlugin] Detected external changes to ${file} (current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash.slice(0, 20)}...)`);
+            const currentMtime = await getFileMtime(file);
+            if (
+              (lastKnownContentHash && currentHash !== lastKnownContentHash) ||
+              (lastKnownMtime && currentMtime !== lastKnownMtime)
+            ) {
+              console.log(
+                `[wallbashHmrPlugin] Detected external changes to ${file} ` +
+                  `(hash: ${currentHash.slice(0, 20)}... vs ${lastKnownContentHash?.slice(0, 20)}..., ` +
+                  `mtime: ${currentMtime} vs ${lastKnownMtime})`
+              );
               await updateFileWithTimestamp(server, "external change");
             } else {
               console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
               lastKnownContentHash = currentHash;
+              lastKnownMtime = currentMtime;
             }
           }
         } catch (err) {
@@ -123,7 +147,10 @@ export default function wallbashHmrPlugin() {
             if (currentHash === lastKnownContentHash) {
               console.log(`[wallbashHmrPlugin] Skipped update for ${file} (no content change)`);
             } else {
-              console.log(`[wallbashHmrPlugin] Detected HMR change to ${file} (current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash?.slice(0, 20)}...)`);
+              console.log(
+                `[wallbashHmrPlugin] Detected HMR change to ${file} ` +
+                  `(current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash?.slice(0, 20)}...)`
+              );
               await updateFileWithTimestamp(server, "HMR update");
             }
           } catch (err) {
