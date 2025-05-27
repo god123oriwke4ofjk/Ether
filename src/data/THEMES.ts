@@ -120,9 +120,9 @@ const dracula = {
 const themes = {
   "Everforest Dark": everforestDark,
   "Vanta Black": blackAndWhite,
-  Gruvbox: gruvbox,
+  "Gruvbox Retro": gruvbox,
   "Nordic Blue": nord,
-  Catppuccin: catppuccin,
+  "Tokyo Night": catppuccin,
   Dracula: dracula,
 };
 
