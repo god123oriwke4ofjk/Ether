@@ -4,40 +4,22 @@ import { resolve, normalize } from "path";
 export default function wallbashHmrPlugin() {
   let lastManualUpdateTime = 0;
   let lastImageUpdateTime = 0;
-  const debounceDelay = 2000;
+  const debounceDelay = 1500;
   const editDelay = 500;
   let isProcessingUpdate = false;
   let lastKnownContentHash = null;
-  let lastKnownMtime = null; 
-  let isFirstConnection = true;
+  let hasReloadedOnConnection = false; 
 
   const file = normalize(resolve(process.cwd(), "src/wallbashTheme.ts"));
 
   async function getFileHash(file) {
     try {
       const content = await fs.readFile(file, "utf-8");
-      const cleanedContent = content
-        .replace(/\/\/ HMR timestamp: .*\n?/, "")
-        .trim()
-        .replace(/\r\n/g, "\n")
-        .replace(/\n+$/, "");
-      const hash = Buffer.from(cleanedContent).toString("base64");
+      const hash = content.length + ":" + Buffer.from(content).toString("base64").slice(0, 100);
       console.log(`[wallbashHmrPlugin] Computed hash for ${file}: ${hash.slice(0, 20)}...`);
       return hash;
     } catch (err) {
       console.error(`[wallbashHmrPlugin] Failed to compute hash for ${file}:`, err);
-      return null;
-    }
-  }
-
-  async function getFileMtime(file) {
-    try {
-      const stats = await fs.stat(file);
-      const mtime = stats.mtimeMs;
-      console.log(`[wallbashHmrPlugin] File mtime for ${file}: ${mtime}`);
-      return mtime;
-    } catch (err) {
-      console.error(`[wallbashHmrPlugin] Failed to get mtime for ${file}:`, err);
       return null;
     }
   }
@@ -54,13 +36,15 @@ export default function wallbashHmrPlugin() {
       if (module) {
         server.moduleGraph.invalidateModule(module);
         console.log(`[wallbashHmrPlugin] Cleared module cache for ${file}`);
+      } else {
+        console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
       }
+
       server.ws.send({
         type: "full-reload",
         path: "/src/wallbashTheme.ts",
       });
       lastKnownContentHash = await getFileHash(file);
-      lastKnownMtime = await getFileMtime(file);
       console.log(`[wallbashHmrPlugin] Updated ${file} with timestamp (${reason})`);
     } catch (err) {
       console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
@@ -69,14 +53,8 @@ export default function wallbashHmrPlugin() {
 
   return {
     name: "vite-plugin-wallbash-hmr",
-    async configureServer(server) {
+    configureServer(server) {
       server.watcher.add(file);
-
-      lastKnownContentHash = await getFileHash(file);
-      lastKnownMtime = await getFileMtime(file);
-      console.log(`[wallbashHmrPlugin] Initialized hash and mtime for ${file}`);
-
-      isFirstConnection = true;
 
       server.watcher.on("change", (path) => {
         if (path === resolve(process.env.HOME, ".cache/hyde/wall.set.png")) {
@@ -87,40 +65,30 @@ export default function wallbashHmrPlugin() {
 
       server.ws.on("connection", async () => {
         if (isProcessingUpdate) {
-          console.log(`[wallbashHmrPlugin] Skipped initial check (already processing)`);
+          console.log(`[wallbashHmrPlugin] Skipped connection update (already processing)`);
           return;
         }
+        if (hasReloadedOnConnection) {
+          console.log(`[wallbashHmrPlugin] Skipped connection update (already reloaded)`);
+          return;
+        }
+
         isProcessingUpdate = true;
+        hasReloadedOnConnection = true; 
 
         try {
-          if (isFirstConnection) {
-            console.log(`[wallbashHmrPlugin] First connection after server start, forcing refresh for ${file}`);
-            await updateFileWithTimestamp(server, "first connection");
-            isFirstConnection = false;
-          } else {
-            const currentHash = await getFileHash(file);
-            const currentMtime = await getFileMtime(file);
-            if (
-              (lastKnownContentHash && currentHash !== lastKnownContentHash) ||
-              (lastKnownMtime && currentMtime !== lastKnownMtime)
-            ) {
-              console.log(
-                `[wallbashHmrPlugin] Detected external changes to ${file} ` +
-                  `(hash: ${currentHash.slice(0, 20)}... vs ${lastKnownContentHash?.slice(0, 20)}..., ` +
-                  `mtime: ${currentMtime} vs ${lastKnownMtime})`
-              );
-              await updateFileWithTimestamp(server, "external change");
-            } else {
-              console.log(`[wallbashHmrPlugin] No external changes detected for ${file}`);
-              lastKnownContentHash = currentHash;
-              lastKnownMtime = currentMtime;
-            }
-          }
+          console.log(`[wallbashHmrPlugin] Forcing initial update for ${file} on connection`);
+          await updateFileWithTimestamp(server, "initial connection");
         } catch (err) {
-          console.error(`[wallbashHmrPlugin] Failed to check ${file}:`, err);
+          console.error(`[wallbashHmrPlugin] Failed to process ${file} on connection:`, err);
         } finally {
           isProcessingUpdate = false;
         }
+
+        setTimeout(() => {
+          hasReloadedOnConnection = false;
+          console.log(`[wallbashHmrPlugin] Reset reload flag for ${file}`);
+        }, 5000); 
       });
     },
     handleHotUpdate({ file: updatedFile, server, timestamp }) {
@@ -143,18 +111,10 @@ export default function wallbashHmrPlugin() {
 
         setTimeout(async () => {
           try {
-            const currentHash = await getFileHash(file);
-            if (currentHash === lastKnownContentHash) {
-              console.log(`[wallbashHmrPlugin] Skipped update for ${file} (no content change)`);
-            } else {
-              console.log(
-                `[wallbashHmrPlugin] Detected HMR change to ${file} ` +
-                  `(current: ${currentHash.slice(0, 20)}..., last: ${lastKnownContentHash?.slice(0, 20)}...)`
-              );
-              await updateFileWithTimestamp(server, "HMR update");
-            }
+            await updateFileWithTimestamp(server, "HMR update");
+            console.log(`[wallbashHmrPlugin] Processed HMR update for ${file}`);
           } catch (err) {
-            console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
+            console.error(`[wallbashHmrPlugin] Failed to update ${file} in HMR:`, err);
           } finally {
             isProcessingUpdate = false;
           }
