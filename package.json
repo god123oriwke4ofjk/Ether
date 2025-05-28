@@ -7,7 +7,11 @@
     "dev": "vite",
     "test": "jest",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "npm install && npm update vite && npm audit fix",
+    "preinstall": "npm run check-vite",
+    "check-vite": "npm install vite@latest",
+    "postinstall": "npm audit fix"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.20.2",
