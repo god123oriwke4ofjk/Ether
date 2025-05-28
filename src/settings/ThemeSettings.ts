@@ -28,6 +28,7 @@ export default function (
     children: [
       {
         render: function () {
+          console.log("[ThemeSettings] Rendering select");
           const selectEl = document.querySelector(
             "#theme-settings select"
           ) as HTMLSelectElement;
@@ -50,6 +51,7 @@ export default function (
           selectEl.disabled = mode === "wallbash";
 
           selectEl.addEventListener("change", () => {
+            console.log(`[ThemeSettings] Theme select changed to: ${selectEl.value}`);
             const value = selectEl.value as ThemeKey | "custom";
             let selectedTheme;
             if (value === "custom") {
@@ -74,6 +76,7 @@ export default function (
           });
         },
         rerender: () => {
+          console.log("[ThemeSettings] Rerendering select");
           const selectEl = document.querySelector(
             "#theme-settings select"
           ) as HTMLSelectElement;
@@ -91,6 +94,7 @@ export default function (
           "#theme-settings .input-group"
         ) as HTMLElement,
         updateState: (e: Event) => {
+          console.log("[ThemeSettings] Input group updated");
           const selectEl = document.querySelector(
             "#theme-settings select"
           ) as HTMLSelectElement;
@@ -107,6 +111,7 @@ export default function (
       })
     ],
     onSave: () => {
+      console.log("[ThemeSettings] Saving theme");
       saveTheme(themeSection.state);
       saveImageState(imageSection.state);
       refreshTheme(themeSection.state);
@@ -119,7 +124,8 @@ export default function (
   });
 
   if (import.meta.hot) {
-    import.meta.hot.accept(["../data/THEMES"], () => {
+    import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], () => {
+      console.log("[ThemeSettings] HMR triggered for THEMES or wallbashTheme");
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
       const selectedTheme = mode === "themes" ? themes[defaultThemeName] : themes[defaultThemeName];
       refreshTheme(selectedTheme.theme);
