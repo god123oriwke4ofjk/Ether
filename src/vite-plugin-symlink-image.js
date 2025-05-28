@@ -4,11 +4,14 @@ import { resolve, normalize } from "path";
 export default function wallbashHmrPlugin() {
   let lastManualUpdateTime = 0;
   let lastImageUpdateTime = 0;
+  let lastConnectionTime = 0;
   const debounceDelay = 1500;
   const editDelay = 500;
+  const connectionDebounce = 1000; 
   let isProcessingUpdate = false;
+  let isProcessingImageUpdate = false;
   let lastKnownContentHash = null;
-  let hasReloadedOnConnection = false; 
+  let hasReloadedOnConnection = false;
   const imagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
 
   const file = normalize(resolve(process.cwd(), "src/wallbashTheme.ts"));
@@ -53,13 +56,27 @@ export default function wallbashHmrPlugin() {
   }
 
   async function triggerImageUpdate(server) {
+    if (isProcessingImageUpdate) {
+      console.log(`[wallbashHmrPlugin] Skipped image update for ${imagePath} (already processing)`);
+      return;
+    }
+    isProcessingImageUpdate = true;
+
     try {
+      const publicImagePath = normalize(resolve(process.cwd(), "public/wall.set.png"));
+      const moduleId = publicImagePath;
+      const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById("/wall.set.png");
+      if (module) {
+        server.moduleGraph.invalidateModule(module);
+        console.log(`[wallbashHmrPlugin] Cleared module cache for ${publicImagePath}`);
+      }
+
       server.ws.send({
         type: "update",
         updates: [
           {
             type: "js-update",
-            path: "/wall.set.png", 
+            path: "/wall.set.png",
             acceptedPath: "/wall.set.png",
             timestamp: Date.now(),
           },
@@ -68,6 +85,10 @@ export default function wallbashHmrPlugin() {
       console.log(`[wallbashHmrPlugin] Triggered image update for ${imagePath}`);
     } catch (err) {
       console.error(`[wallbashHmrPlugin] Failed to trigger image update:`, err);
+    } finally {
+      setTimeout(() => {
+        isProcessingImageUpdate = false;
+      }, 500); 
     }
   }
 
@@ -78,7 +99,7 @@ export default function wallbashHmrPlugin() {
       server.watcher.add(imagePath);
 
       server.watcher.on("change", async (path) => {
-        if (path === imagePath) {
+        if (path === imagePath && !isProcessingImageUpdate) {
           lastImageUpdateTime = Date.now();
           console.log(`[wallbashHmrPlugin] Detected image change at ${path}`);
           await triggerImageUpdate(server);
@@ -86,12 +107,15 @@ export default function wallbashHmrPlugin() {
       });
 
       server.ws.on("connection", async () => {
-        if (isProcessingUpdate) {
-          console.log(`[wallbashHmrPlugin] Skipped connection update (already processing)`);
+        const now = Date.now();
+        if (now - lastConnectionTime < connectionDebounce) {
+          console.log(`[wallbashHmrPlugin] Skipped connection update (within ${connectionDebounce}ms debounce)`);
           return;
         }
-        if (hasReloadedOnConnection) {
-          console.log(`[wallbashHmrPlugin] Skipped connection update (already reloaded)`);
+        lastConnectionTime = now;
+
+        if (isProcessingUpdate || hasReloadedOnConnection) {
+          console.log(`[wallbashHmrPlugin] Skipped connection update (already processing or reloaded)`);
           return;
         }
 
