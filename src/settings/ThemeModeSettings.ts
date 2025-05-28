@@ -13,7 +13,9 @@ async function getHydeTheme() {
   try {
     const content = await fs.readFile(STATERC_PATH, "utf-8");
     const match = content.match(/^HYDE_THEME="([^"]+)"/m);
-    return match ? match[1] : null;
+    const themeName = match ? match[1] : null;
+    console.log(`[ThemeModeSettings] Read HYDE_THEME="${themeName}" from ${STATERC_PATH}`);
+    return themeName;
   } catch (err) {
     console.error(`[ThemeModeSettings] Failed to read ${STATERC_PATH}:`, err);
     return null;
@@ -27,17 +29,20 @@ export default function initThemeModeSettings() {
     sectionEl: document.getElementById("theme-mode-settings") as HTMLElement,
     onSave: (data: string) => {
       try {
+        console.log(`[ThemeModeSettings] Saving theme mode: ${data}`);
         localStorage.setItem(THEME_MODE_LS_KEY, data);
         const { theme, image } = data === "themes" ? themes[defaultThemeName] : wallbash;
         saveTheme(theme);
         refreshTheme(theme);
         saveImageState(image);
         refreshImage(image);
+
         const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
         if (select) {
           select.value = data === "themes" ? defaultThemeName : "custom";
           select.disabled = data === "wallbash";
         }
+
         const message = data === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
         const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
         if (msgEl) {
@@ -48,11 +53,12 @@ export default function initThemeModeSettings() {
           }, 3000);
         }
       } catch (e) {
-        console.error("Failed to save theme mode:", e);
+        console.error("[ThemeModeSettings] Failed to save theme mode:", e);
         themeModeSection.displayFailedMsg("Failed to save theme mode");
       }
     },
     render: function () {
+      console.log(`[ThemeModeSettings] Rendering with state: ${this.state}`);
       const sectionEl = this.sectionEl;
       sectionEl.innerHTML = `
         <h3 class="settings-title">Theme Mode</h3>
@@ -77,7 +83,8 @@ export default function initThemeModeSettings() {
       inputs.forEach((input) => {
         input.addEventListener("change", (e) => {
           this.state = (e.target as HTMLInputElement).value;
-          const message = this.state === "wallbash" ? "Wallbash theme selected" : "Default theme selected";
+          console.log(`[ThemeModeSettings] Radio changed to: ${this.state}`);
+          const message = this.state === "wallbash" ? "Wallbash theme selected" : "Themes mode selected";
           const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
           if (msgEl) {
             msgEl.textContent = message;
@@ -91,11 +98,13 @@ export default function initThemeModeSettings() {
 
       const saveBtn = sectionEl.querySelector(".save-btn") as HTMLButtonElement;
       saveBtn.addEventListener("click", () => {
+        console.log(`[ThemeModeSettings] Save button clicked, state: ${this.state}`);
         this.onSave(this.state);
       });
 
       const resetBtn = sectionEl.querySelector(".reset-btn") as HTMLElement;
       resetBtn.addEventListener("click", () => {
+        console.log("[ThemeModeSettings] Reset button clicked");
         this.state = "themes";
         this.rerender();
         this.onSave("themes");
@@ -110,11 +119,12 @@ export default function initThemeModeSettings() {
       });
     },
     rerender: function () {
+      console.log(`[ThemeModeSettings] Rerendering with state: ${this.state}`);
       const inputs = this.sectionEl.querySelectorAll('input[name="themeMode"]') as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
         input.checked = input.value === this.state;
       });
-      const message = this.state === "wallbash" ? "Wallbash theme is loaded" : "Default theme is loaded";
+      const message = this.state === "wallbash" ? "Wallbash theme is loaded" : "Themes mode is loaded";
       const msgEl = this.sectionEl.querySelector(".msg") as HTMLElement;
       if (msgEl) {
         msgEl.textContent = message;
@@ -128,6 +138,7 @@ export default function initThemeModeSettings() {
 
   if (import.meta.hot) {
     import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], async (newModules) => {
+      console.log("[ThemeModeSettings] HMR triggered for THEMES or wallbashTheme");
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
       let themeName = defaultThemeName;
 
@@ -161,6 +172,7 @@ export default function initThemeModeSettings() {
       saveImageState(image);
       themeModeSection.state = mode;
       themeModeSection.rerender();
+
       const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
       if (select) {
         select.value = mode === "themes" ? themeName : "custom";
