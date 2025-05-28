@@ -3,8 +3,22 @@ import { refreshTheme, saveTheme } from "../Theme";
 import { refreshImage, saveImageState } from "../Image";
 import { themes, defaultThemeName } from "../data/THEMES";
 import wallbash from "../wallbashTheme";
+import { promises as fs } from "fs";
+import { resolve } from "path";
 
 const THEME_MODE_LS_KEY = "themeMode";
+const STATERC_PATH = resolve(process.env.HOME, ".local/state/hyde/staterc");
+
+async function getHydeTheme() {
+  try {
+    const content = await fs.readFile(STATERC_PATH, "utf-8");
+    const match = content.match(/^HYDE_THEME="([^"]+)"/m);
+    return match ? match[1] : null;
+  } catch (err) {
+    console.error(`[ThemeModeSettings] Failed to read ${STATERC_PATH}:`, err);
+    return null;
+  }
+}
 
 export default function initThemeModeSettings() {
   const themeModeSection = new SettingsSection<string>({
@@ -113,24 +127,46 @@ export default function initThemeModeSettings() {
   });
 
   if (import.meta.hot) {
-    import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], () => {
+    import.meta.hot.accept(["../data/THEMES", "../wallbashTheme"], async (newModules) => {
       const mode = localStorage.getItem(THEME_MODE_LS_KEY) || "themes";
-      const { theme, image } = mode === "themes" ? themes[defaultThemeName] : wallbash;
+      let themeName = defaultThemeName;
+
       if (mode === "themes") {
-        refreshTheme(themes[defaultThemeName].theme);
-        refreshImage(themes[defaultThemeName].image);
-      } else {
-        refreshTheme(theme);
-        refreshImage(image);
+        const hydeTheme = await getHydeTheme();
+        if (hydeTheme && Object.keys(themes).includes(hydeTheme)) {
+          console.log(`[ThemeModeSettings] Detected HYDE_THEME="${hydeTheme}" in staterc, switching to theme`);
+          themeName = hydeTheme;
+          const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
+          if (select) {
+            select.value = themeName;
+            select.disabled = false;
+          }
+          const msgEl = themeModeSection.sectionEl.querySelector(".msg") as HTMLElement;
+          if (msgEl) {
+            msgEl.textContent = `Switched to ${themeName} theme from HYDE_THEME`;
+            msgEl.classList.remove("error", "hide");
+            setTimeout(() => {
+              msgEl.classList.add("hide");
+            }, 3000);
+          }
+        } else if (hydeTheme) {
+          console.log(`[ThemeModeSettings] HYDE_THEME="${hydeTheme}" not found in THEMES, using default`);
+        }
       }
+
+      const { theme, image } = mode === "themes" ? themes[themeName] : wallbash;
+      refreshTheme(theme);
+      refreshImage(image);
+      saveTheme(theme);
+      saveImageState(image);
       themeModeSection.state = mode;
       themeModeSection.rerender();
       const select = document.querySelector('select[name="load theme"]') as HTMLSelectElement;
       if (select) {
-        select.value = mode === "themes" ? defaultThemeName : "custom";
+        select.value = mode === "themes" ? themeName : "custom";
         select.disabled = mode === "wallbash";
       }
-      console.log(`HMR: ThemeModeSettings updated to ${mode === "themes" ? defaultThemeName : "wallbash"}`);
+      console.log(`HMR: ThemeModeSettings updated to ${mode === "themes" ? themeName : "wallbash"}`);
     });
   }
 
