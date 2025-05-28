@@ -1,125 +1,146 @@
 import { promises as fs } from "fs";
-import { resolve } from "path";
+import { resolve, normalize } from "path";
 
-export default function symlinkImagePlugin() {
-  const realImagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
+export default function wallbashHmrPlugin() {
+  let lastManualUpdateTime = 0;
   let lastImageUpdateTime = 0;
-  let lastSuccessfulLoad = 0;
-  let lastImageHash = null;
-  const baseDebounceDelay = 1500;
-  const smallImageDebounceDelay = 750;
-  const maxRetries = 3;
-  const baseRetryDelay = 500;
-  const smallImageRetryDelay = 200;
-  const smallImageThreshold = 1024 * 1024;
+  const debounceDelay = 1500;
+  const editDelay = 500;
+  let isProcessingUpdate = false;
+  let lastKnownContentHash = null;
+  let hasReloadedOnConnection = false; 
+  const imagePath = resolve(process.env.HOME, ".cache/hyde/wall.set.png");
 
-  async function getFileHash(path) {
+  const file = normalize(resolve(process.cwd(), "src/wallbashTheme.ts"));
+
+  async function getFileHash(file) {
     try {
-      const content = await fs.readFile(path);
-      return content.length + ":" + content.slice(0, 100).toString("base64");
-    } catch {
+      const content = await fs.readFile(file, "utf-8");
+      const hash = content.length + ":" + Buffer.from(content).toString("base64").slice(0, 100);
+      console.log(`[wallbashHmrPlugin] Computed hash for ${file}: ${hash.slice(0, 20)}...`);
+      return hash;
+    } catch (err) {
+      console.error(`[wallbashHmrPlugin] Failed to compute hash for ${file}:`, err);
       return null;
     }
   }
 
-  async function isFileReady(path, retries = 0) {
+  async function updateFileWithTimestamp(server, reason) {
     try {
-      const stats = await fs.stat(path);
-      const isSmallImage = stats.size < smallImageThreshold;
-      const initialSize = stats.size;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const newStats = await fs.stat(path);
-      if (newStats.size === initialSize && initialSize > 0) {
-        return { ready: true, isSmallImage };
+      const content = await fs.readFile(file, "utf-8");
+      const cleanedContent = content.replace(/\/\/ HMR timestamp: .*\n?/, "");
+      const newContent = `${cleanedContent}\n// HMR timestamp: ${Date.now()}\n`;
+      await fs.writeFile(file, newContent);
+
+      const moduleId = normalize(file);
+      const module = server.moduleGraph.getModuleById(moduleId) || server.moduleGraph.getModuleById(`/src/wallbashTheme.ts`);
+      if (module) {
+        server.moduleGraph.invalidateModule(module);
+        console.log(`[wallbashHmrPlugin] Cleared module cache for ${file}`);
+      } else {
+        console.warn(`[wallbashHmrPlugin] Module not found for ${file}`);
       }
-      throw new Error("File size unstable");
+
+      server.ws.send({
+        type: "full-reload",
+        path: "/src/wallbashTheme.ts",
+      });
+      lastKnownContentHash = await getFileHash(file);
+      console.log(`[wallbashHmrPlugin] Updated ${file} with timestamp (${reason})`);
     } catch (err) {
-      if (retries < maxRetries) {
-        const isSmallImage = retries === 0 ? true : (await fs.stat(path).catch(() => ({ size: 0 }))).size < smallImageThreshold;
-        const retryDelay = isSmallImage ? smallImageRetryDelay : baseRetryDelay;
-        console.log(`[symlinkImagePlugin] Retrying access to ${path} (${retries + 1}/${maxRetries})`);
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
-        return isFileReady(path, retries + 1);
-      }
-      throw err;
+      console.error(`[wallbashHmrPlugin] Failed to update ${file}:`, err);
+    }
+  }
+
+  async function triggerImageUpdate(server) {
+    try {
+      server.ws.send({
+        type: "update",
+        updates: [
+          {
+            type: "js-update",
+            path: "/wall.set.png", 
+            acceptedPath: "/wall.set.png",
+            timestamp: Date.now(),
+          },
+        ],
+      });
+      console.log(`[wallbashHmrPlugin] Triggered image update for ${imagePath}`);
+    } catch (err) {
+      console.error(`[wallbashHmrPlugin] Failed to trigger image update:`, err);
     }
   }
 
   return {
-    name: "vite-plugin-symlink-image",
+    name: "vite-plugin-wallbash-hmr",
     configureServer(server) {
-      server.middlewares.use(async (ctx, res, next) => {
-        if (ctx.url === "/wall.set.png" || ctx.url.startsWith("/wall.set.png?")) {
-          try {
-            const { ready, isSmallImage } = await isFileReady(realImagePath);
-            const content = await fs.readFile(realImagePath);
-            res.setHeader("Content-Type", "image/png");
-            res.setHeader("Cache-Control", "no-cache");
-            res.end(content);
-            lastSuccessfulLoad = Date.now();
-            console.log(`[symlinkImagePlugin] Served ${realImagePath} (${isSmallImage ? "small" : "large"} image)`);
-          } catch (err) {
-            console.error(`[symlinkImagePlugin] Failed to serve ${realImagePath}:`, err);
-            res.statusCode = 404;
-            res.end("Image not found");
-          }
-        } else {
-          next();
+      server.watcher.add(file);
+      server.watcher.add(imagePath);
+
+      server.watcher.on("change", async (path) => {
+        if (path === imagePath) {
+          lastImageUpdateTime = Date.now();
+          console.log(`[wallbashHmrPlugin] Detected image change at ${path}`);
+          await triggerImageUpdate(server);
         }
       });
 
-      server.watcher.add(realImagePath);
-      server.watcher.on("change", async (path) => {
-        if (path === realImagePath) {
-          const now = Date.now();
-          const currentHash = await getFileHash(path);
-          if (currentHash === lastImageHash) {
-            console.log(`[symlinkImagePlugin] Skipped change for ${path} (identical content)`);
-            return;
-          }
-          if (now - lastSuccessfulLoad < 500) {
-            console.log(`[symlinkImagePlugin] Skipped change for ${path} (recently loaded successfully)`);
-            return;
-          }
-          const stats = await fs.stat(path).catch(() => ({ size: 0 }));
-          const isSmallImage = stats.size < smallImageThreshold;
-          const debounceDelay = isSmallImage ? smallImageDebounceDelay : baseDebounceDelay;
-
-          if (now - lastImageUpdateTime < debounceDelay) {
-            console.log(`[symlinkImagePlugin] Skipped change for ${path} (within ${debounceDelay}ms debounce)`);
-            return;
-          }
-          lastImageUpdateTime = now;
-          lastImageHash = currentHash;
-          console.log(`[symlinkImagePlugin] Detected change in ${path} (${isSmallImage ? "small" : "large"} image)`);
-          const hmrDelay = isSmallImage ? 500 : 1000;
-          setTimeout(() => {
-            server.ws.send({
-              type: "full-reload",
-              path: "/wall.set.png",
-            });
-            console.log(`[symlinkImagePlugin] Triggered HMR for /src/wallbashTheme.ts after ${hmrDelay}ms`);
-          }, hmrDelay);
+      server.ws.on("connection", async () => {
+        if (isProcessingUpdate) {
+          console.log(`[wallbashHmrPlugin] Skipped connection update (already processing)`);
+          return;
         }
+        if (hasReloadedOnConnection) {
+          console.log(`[wallbashHmrPlugin] Skipped connection update (already reloaded)`);
+          return;
+        }
+
+        isProcessingUpdate = true;
+        hasReloadedOnConnection = true;
+
+        try {
+          console.log(`[wallbashHmrPlugin] Forcing initial update for ${file} on connection`);
+          await updateFileWithTimestamp(server, "initial connection");
+        } catch (err) {
+          console.error(`[wallbashHmrPlugin] Failed to process ${file} on connection:`, err);
+        } finally {
+          isProcessingUpdate = false;
+        }
+
+        setTimeout(() => {
+          hasReloadedOnConnection = false;
+          console.log(`[wallbashHmrPlugin] Reset reload flag for ${file}`);
+        }, 5000);
       });
     },
-    async transformIndexHtml() {
-      try {
-        await isFileReady(realImagePath);
-        return [
-          {
-            tag: "link",
-            attrs: {
-              rel: "preload",
-              href: "/wall.set.png",
-              as: "image",
-            },
-            injectTo: "head",
-          },
-        ];
-      } catch (err) {
-        console.error(`[symlinkImagePlugin] Failed to access ${realImagePath}:`, err);
-        return [];
+    handleHotUpdate({ file: updatedFile, server, timestamp }) {
+      if (normalize(updatedFile) === file) {
+        if (isProcessingUpdate) {
+          console.log(`[wallbashHmrPlugin] Skipped update for ${file} (already processing)`);
+          return;
+        }
+        if (timestamp - lastManualUpdateTime < debounceDelay) {
+          console.log(`[wallbashHmrPlugin] Skipped update for ${file} (within ${debounceDelay}ms debounce)`);
+          return;
+        }
+        if (timestamp - lastImageUpdateTime < 1000) {
+          console.log(`[wallbashHmrPlugin] Skipped update for ${file} (recent image update)`);
+          return;
+        }
+
+        lastManualUpdateTime = timestamp;
+        isProcessingUpdate = true;
+
+        setTimeout(async () => {
+          try {
+            await updateFileWithTimestamp(server, "HMR update");
+            console.log(`[wallbashHmrPlugin] Processed HMR update for ${file}`);
+          } catch (err) {
+            console.error(`[wallbashHmrPlugin] Failed to update ${file} in HMR:`, err);
+          } finally {
+            isProcessingUpdate = false;
+          }
+        }, editDelay);
       }
     },
   };
